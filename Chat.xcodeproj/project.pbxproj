@@ -14,6 +14,7 @@
 		84FBD9DE1F9F47F4005D779C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 84FBD9DC1F9F47F4005D779C /* LaunchScreen.storyboard */; };
 		84FBD9E91F9F47F5005D779C /* ChatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FBD9E81F9F47F5005D779C /* ChatTests.swift */; };
 		84FBD9F41F9F47F5005D779C /* ChatUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FBD9F31F9F47F5005D779C /* ChatUITests.swift */; };
+		84FBDA061F9F4CFE005D779C /* LoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FBDA051F9F4CFE005D779C /* LoginController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +48,7 @@
 		84FBD9EF1F9F47F5005D779C /* ChatUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChatUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		84FBD9F31F9F47F5005D779C /* ChatUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatUITests.swift; sourceTree = "<group>"; };
 		84FBD9F51F9F47F5005D779C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		84FBDA051F9F4CFE005D779C /* LoginController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,8 +99,8 @@
 		84FBD9D21F9F47F4005D779C /* Chat */ = {
 			isa = PBXGroup;
 			children = (
+				84FBDA041F9F4C84005D779C /* Controller */,
 				84FBD9D31F9F47F4005D779C /* AppDelegate.swift */,
-				84FBD9D51F9F47F4005D779C /* ViewController.swift */,
 				84FBD9D71F9F47F4005D779C /* Main.storyboard */,
 				84FBD9DA1F9F47F4005D779C /* Assets.xcassets */,
 				84FBD9DC1F9F47F4005D779C /* LaunchScreen.storyboard */,
@@ -123,6 +125,15 @@
 				84FBD9F51F9F47F5005D779C /* Info.plist */,
 			);
 			path = ChatUITests;
+			sourceTree = "<group>";
+		};
+		84FBDA041F9F4C84005D779C /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				84FBD9D51F9F47F4005D779C /* ViewController.swift */,
+				84FBDA051F9F4CFE005D779C /* LoginController.swift */,
+			);
+			path = Controller;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -260,6 +271,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				84FBD9D61F9F47F4005D779C /* ViewController.swift in Sources */,
+				84FBDA061F9F4CFE005D779C /* LoginController.swift in Sources */,
 				84FBD9D41F9F47F4005D779C /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
