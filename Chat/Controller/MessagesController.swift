@@ -15,12 +15,12 @@ class MessagesController: UITableViewController {
         super.viewDidLoad()
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "newMessageicon", style: .plain, target: self, action: #selector(handleNewMessage))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "newMessageicon"), style: .plain, target: self, action: #selector(handleNewMessage))
     
         checkUserLogIn()
     }
     
-    func handleNewMessage() {
+    @objc func handleNewMessage() {
         let newMessageController = NewMessageController()
         present(newMessageController, animated: true, completion: nil)
     }
