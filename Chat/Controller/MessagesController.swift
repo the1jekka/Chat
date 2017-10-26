@@ -15,9 +15,26 @@ class MessagesController: UITableViewController {
         super.viewDidLoad()
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
-        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "newMessageicon", style: .plain, target: self, action: #selector(handleNewMessage))
+    
+        checkUserLogIn()
+    }
+    
+    func handleNewMessage() {
+        let newMessageController = NewMessageController()
+        present(newMessageController, animated: true, completion: nil)
+    }
+    
+    func checkUserLogIn() {
         if Auth.auth().currentUser?.uid == nil {
             perform(#selector(handleLogout), with: nil, afterDelay: 0)
+        } else {
+            let uid = Auth.auth().currentUser?.uid
+            Database.database().reference().child("users").child(uid!).observeSingleEvent(of: .value, with: {(snapshot) in
+                if let dict = snapshot.value as? [String : AnyObject] {
+                    self.navigationItem.title = dict["name"] as? String
+                }
+            }, withCancel: nil)
         }
     }
 
