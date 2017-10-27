@@ -82,6 +82,14 @@ class MessagesController: UITableViewController {
         
         navigationItem.titleView = titleView
         
+        titleView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showConversationController)))
+        
+    }
+    
+    @objc func showConversationController() {
+        let conversationController = ConversationController(collectionViewLayout: UICollectionViewFlowLayout())
+        
+        navigationController?.pushViewController(conversationController, animated: true)
     }
 
     @objc func handleLogout() {
