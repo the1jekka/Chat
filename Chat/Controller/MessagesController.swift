@@ -16,12 +16,41 @@ class MessagesController: UITableViewController {
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "newMessageicon"), style: .plain, target: self, action: #selector(handleNewMessage))
-    
         checkUserLogIn()
+        observeMessages()
+    }
+    
+    var messages = Array<Message>()
+    
+    func observeMessages() {
+        let reference = Database.database().reference().child("messages")
+        reference.observe(.childAdded, with: {(snapshot) in
+            if let dictionary = snapshot.value as? [String : AnyObject] {
+                let message = Message()
+                message.setValuesForKeys(dictionary)
+                DispatchQueue.main.async {
+                    self.messages.append(message)
+                }
+            }
+        }, withCancel: nil)
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return messages.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "cellId")
+        let message = messages[indexPath.row]
+        cell.textLabel?.text = message.receiver
+        cell.detailTextLabel?.text = message.text
+        return cell
     }
     
     @objc func handleNewMessage() {
         let newMessageController = NewMessageController()
+        newMessageController.messagesController = self
+        let navigationController = UINavigationController(rootViewController: newMessageController)
         present(newMessageController, animated: true, completion: nil)
     }
     
@@ -86,9 +115,9 @@ class MessagesController: UITableViewController {
         
     }
     
-    @objc func showConversationController() {
+    @objc func showConversationController(forUser user: User) {
         let conversationController = ConversationController(collectionViewLayout: UICollectionViewFlowLayout())
-        
+        conversationController.user = user
         navigationController?.pushViewController(conversationController, animated: true)
     }
 

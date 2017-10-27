@@ -27,6 +27,7 @@ class NewMessageController: UITableViewController {
         Database.database().reference().child("users").observeSingleEvent(of: .childAdded, with: {(snapshot) in
             if let dict = snapshot.value as? [String : AnyObject] {
                 let user = User()
+                user.id = snapshot.key
                 user.setValuesForKeys(dict)
                 self.users.append(user)
                 
@@ -47,6 +48,15 @@ class NewMessageController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 72
+    }
+    
+    var messagesController: MessagesController?
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        dismiss(animated: true) {
+            let user = self.users[indexPath.row]
+            self.messagesController?.showConversationController(forUser: user)
+        }
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

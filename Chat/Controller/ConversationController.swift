@@ -11,6 +11,12 @@ import Firebase
 
 class ConversationController: UICollectionViewController, UITextFieldDelegate {
     
+    var user: User? {
+        didSet {
+            navigationItem.title = user?.name
+        }
+    }
+    
     lazy var inputTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Enter a message"
@@ -66,7 +72,10 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate {
     @objc func handleSend()  {
         let reference = Database.database().reference().child("messages")
         let childReference = reference.childByAutoId()
-        let values = ["text" : inputTextField.text!]
+        let senderId = Auth.auth().currentUser?.uid
+        let receiverId = user?.id!
+        let timestamp: Int = Int(NSDate().timeIntervalSince1970)
+        let values = ["text" : inputTextField.text!, "senderId" : senderId, "receiverId" : receiverId, "timestamp" : timestamp] as [String : Any]
         reference.updateChildValues(values)
     }
     
