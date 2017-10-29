@@ -55,6 +55,8 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        collectionView?.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 58, right: 0)
+        collectionView?.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
         collectionView?.alwaysBounceVertical = true
         collectionView?.backgroundColor = .white
         collectionView?.register(ConversationMessageCell.self, forCellWithReuseIdentifier: cellId)
@@ -70,11 +72,26 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! ConversationMessageCell
         let message = messages[indexPath.item]
         cell.messageTextView.text = message.text
+        cell.bubleMessageWidthAnchor?.constant = estimateFrameForText(text: message.text!).width + 32
         return cell
     }
     
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        collectionView?.collectionViewLayout.invalidateLayout()
+    }
+    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: view.frame.width, height: 88)
+        var height: CGFloat = 88
+        if let text = messages[indexPath.item].text {
+            height = estimateFrameForText(text: text).height + 20
+        }
+        return CGSize(width: view.frame.width, height: height)
+    }
+    
+    private func estimateFrameForText(text: String) -> CGRect {
+        let size = CGSize(width: 200, height: 1000)
+        let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
+        return NSString(string: text).boundingRect(with: size, options: options, attributes: [NSAttributedStringKey.font : UIFont.systemFont(ofSize: 16)], context: nil)
     }
     
     func setupInputs() {
@@ -127,6 +144,7 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
                 print(error)
                 return
             }
+            self.inputTextField.text = nil
             let userMessagesReference = Database.database().reference().child("user-messages").child(senderId!)
             let messageId = childReference.key
             userMessagesReference.updateChildValues([messageId: 1])

@@ -37,8 +37,8 @@ class MessagesController: UITableViewController {
                 if let dictionary = snapshot.value as? [String : AnyObject] {
                     let message = Message()
                     message.setValuesForKeys(dictionary)
-                    if let receiver = message.receiver {
-                        self.messagesDictionary[receiver] = message
+                    if let chatPartner = message.chatPartnerId() {
+                        self.messagesDictionary[chatPartner] = message
                         self.messages = Array(self.messagesDictionary.values)
                         self.messages.sort{(message1, message2) -> Bool in
                             return message1.timestamp! > message2.timestamp!
