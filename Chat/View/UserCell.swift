@@ -13,18 +13,7 @@ class UserCell: UITableViewCell {
     
     var message: Message? {
         didSet {
-            if let receiver = message?.receiver {
-                let reference = Database.database().reference().child("users").child(receiver)
-                reference.observeSingleEvent(of: .value, with: {(snapshot) in
-                    if let dictionary = snapshot.value as? [String : AnyObject] {
-                        self.textLabel?.text = dictionary["text"] as? String
-                        if let profileImageUrl = dictionary["profileImageURL"] as? String {
-                            self.profileImageView.loadImageUsingCacheWithUrl(urlString: profileImageUrl)
-                            
-                        }
-                    }
-                }, withCancel: nil)
-            }
+            setupNameAndAvatar()
             self.detailTextLabel?.text = message?.text
             if let seconds =  message?.timestamp {
                 let timeDate = Date(timeIntervalSince1970: Double(seconds))
@@ -32,6 +21,27 @@ class UserCell: UITableViewCell {
                 dateFormatter.dateFormat = "hh:mm a"
                 self.timeLabel.text = dateFormatter.string(from: timeDate)
             }
+        }
+    }
+    
+    private func setupNameAndAvatar() {
+        let chatPartnerId: String?
+        if message?.sender == Auth.auth().currentUser?.uid {
+            chatPartnerId = message?.receiver
+        } else {
+            chatPartnerId = message?.sender
+        }
+        if let id = chatPartnerId {
+            let reference = Database.database().reference().child("users").child(id)
+            reference.observeSingleEvent(of: .value, with: {(snapshot) in
+                if let dictionary = snapshot.value as? [String : AnyObject] {
+                    self.textLabel?.text = dictionary["text"] as? String
+                    if let profileImageUrl = dictionary["profileImageURL"] as? String {
+                        self.profileImageView.loadImageUsingCacheWithUrl(urlString: profileImageUrl)
+                        
+                    }
+                }
+            }, withCancel: nil)
         }
     }
     

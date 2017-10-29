@@ -76,7 +76,18 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate {
         let receiverId = user?.id!
         let timestamp: Int = Int(NSDate().timeIntervalSince1970)
         let values = ["text" : inputTextField.text!, "senderId" : senderId, "receiverId" : receiverId, "timestamp" : timestamp] as [String : Any]
-        reference.updateChildValues(values)
+        //reference.updateChildValues(values)
+        childReference.updateChildValues(values, withCompletionBlock: {(error, ref) in
+            if error != nil {
+                print(error)
+                return
+            }
+            let userMessagesReference = Database.database().reference().child("user-messages").child(senderId!)
+            let messageId = childReference.key
+            userMessagesReference.updateChildValues([messageId: 1])
+            let recipientUserMessagesReference = Database.database().reference().child("user-messages").child(receiverId!)
+            recipientUserMessagesReference.updateChildValues([messageId: 1])
+        })
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
