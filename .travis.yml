@@ -16,4 +16,4 @@ before_script:
 
 script:
   - swiftlint
-  - set -o pipefail && xcodebuild -workspace Chat.xcworkspace -scheme "$SCHEME" -destination 'platform=iOS Simulator,name=iPhone 8 Plus' build test CODE_SIGN_IDENTITY=- | xcpretty -f `xcpretty-travis-formatter`
+  - set -o pipefail && xcodebuild -workspace Chat.xcworkspace -scheme "$SCHEME" -destination 'platform=iOS Simulator,name=iPhone 7 Plus' build test CODE_SIGN_IDENTITY=- | xcpretty -f `xcpretty-travis-formatter`
