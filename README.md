@@ -1,1 +1,1 @@
-# Chat[![Build Status](https://travis-ci.org/the1jekka/Chat.svg?branch=ui-tests-and-travis-ci-support)](https://travis-ci.org/the1jekka/Chat) [![CocoaPods Compatible](https://img.shields.io/cocoapods/v/Chat.svg)](https://img.shields.io/cocoapods/v/Chat.svg)
+# Chat [![Build Status](https://travis-ci.org/the1jekka/Chat.svg)](https://travis-ci.org/the1jekka/Chat) [![CocoaPods Compatible](https://img.shields.io/cocoapods/v/Chat.svg)](https://img.shields.io/cocoapods/v/Chat.svg)
