@@ -26,15 +26,12 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         }
         let userMessagesReference = Database.database().reference().child("user-messages").child(uid)
         userMessagesReference.observe(.childAdded, with: {(snapshot) in
-            print(snapshot)
             let messageId = snapshot.key
             let messagesReference = Database.database().reference().child("messages").child(messageId)
             messagesReference.observeSingleEvent(of: .value, with: {(snapshot) in
-                print(snapshot)
                 guard let dictionary = snapshot.value as? [String : AnyObject] else {
                     return
                 }
-                print(dictionary)
                 let message = Message(dictionary: dictionary)
                 print(message)
                 if message.chatPartnerId() == self.user?.id {
@@ -75,10 +72,30 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as? ConversationMessageCell
         let message = messages[indexPath.item]
-        print(message.text)
         cell?.messageTextView.text = message.text
+        setupCell(cell: cell!, message: message)
         cell?.bubleMessageWidthAnchor?.constant = estimateFrameForText(text: message.text!).width + 32
         return cell!
+    }
+    
+    private func setupCell(cell: ConversationMessageCell, message: Message) {
+        if let profileImageURL = self.user?.profileImageURL {
+            cell.profileImageView.loadImageUsingCacheWithUrl(urlString: profileImageURL)
+        }
+        
+        if message.sender == Auth.auth().currentUser?.uid {
+            cell.bubbleMessageView.backgroundColor = ConversationMessageCell.blueColor
+            cell.messageTextView.textColor = .white
+            cell.bubleMessageRightAnchor?.isActive = true
+            cell.bubleMessageLeftAnchor?.isActive = false
+            cell.profileImageView.isHidden = true
+        } else {
+            cell.bubbleMessageView.backgroundColor = ConversationMessageCell.greyColor
+            cell.messageTextView.textColor = .black
+            cell.bubleMessageRightAnchor?.isActive = false
+            cell.bubleMessageLeftAnchor?.isActive = true
+            cell.profileImageView.isHidden = false
+        }
     }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

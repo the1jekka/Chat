@@ -19,27 +19,54 @@ class ConversationMessageCell: UICollectionViewCell {
         return textView
     }()
     
+    static let blueColor = UIColor(r: 0, g: 137, b: 249)
+    static let greyColor = UIColor(r: 240, g: 240, b: 240)
+    
     let bubbleMessageView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(r: 0, g: 137, b: 249)
+        view.backgroundColor = blueColor
         view.layer.cornerRadius = 16
         view.layer.masksToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
+    let profileImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.layer.cornerRadius = 16
+        imageView.layer.masksToBounds = true
+        imageView.contentMode = .scaleAspectFill
+        return imageView
+    }()
+    
     var bubleMessageWidthAnchor: NSLayoutConstraint?
+    var bubleMessageRightAnchor: NSLayoutConstraint?
+    var bubleMessageLeftAnchor: NSLayoutConstraint?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         addSubview(bubbleMessageView)
         addSubview(messageTextView)
+        addSubview(profileImageView)
+        
+        setupProfileImageView()
         setupBubbleMessageView()
         setupMessageTextView()
     }
     
+    func setupProfileImageView() {
+        profileImageView.leftAnchor.constraint(equalTo: self.leftAnchor, constant: 8).isActive = true
+        profileImageView.bottomAnchor.constraint(equalTo: self.bottomAnchor).isActive = true
+        profileImageView.widthAnchor.constraint(equalToConstant: 32).isActive = true
+        profileImageView.heightAnchor.constraint(equalToConstant: 32).isActive = true
+    }
+    
     func setupBubbleMessageView() {
-        bubbleMessageView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8).isActive = true
+        bubleMessageRightAnchor = bubbleMessageView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8)
+        bubleMessageRightAnchor?.isActive = true
+        bubleMessageLeftAnchor = bubbleMessageView.leftAnchor.constraint(equalTo: profileImageView.rightAnchor, constant: 8)
+        bubleMessageLeftAnchor?.isActive = false
         bubbleMessageView.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
         bubleMessageWidthAnchor = bubbleMessageView.widthAnchor.constraint(equalToConstant: 200)
         bubleMessageWidthAnchor?.isActive = true
