@@ -9,6 +9,26 @@
 import UIKit
 import Firebase
 
+fileprivate func < <T: Comparable>(lhs: T?, rhs: T?) -> Bool {
+    switch (lhs, rhs) {
+    case let (l?, r?):
+        return l < r
+    case (nil, _?):
+        return true
+    default:
+        return false
+    }
+}
+
+fileprivate func > <T: Comparable>(lhs: T?, rhs: T?) -> Bool {
+    switch (lhs, rhs) {
+    case let (l?, r?):
+        return l > r
+    default:
+        return rhs < lhs
+    }
+}
+
 class MessagesController: UITableViewController {
 
     let cellId = "cellId"
@@ -17,8 +37,9 @@ class MessagesController: UITableViewController {
         super.viewDidLoad()
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "newMessageicon"), style: .plain, target: self, action: #selector(handleNewMessage))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "newMessageIcon"), style: .plain, target: self, action: #selector(handleNewMessage))
         checkUserLogIn()
+        //navigationItem.rightBarButtonItem = UIBarButtonItem(title: "New ", style: .plain, target: self, action: #selector(handleNewMessage))
         tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
     }
     
@@ -35,13 +56,12 @@ class MessagesController: UITableViewController {
             let messageReference = Database.database().reference().child("messages").child(messageId)
             messageReference.observeSingleEvent(of: .value, with: {(snapshot) in
                 if let dictionary = snapshot.value as? [String : AnyObject] {
-                    let message = Message()
-                    message.setValuesForKeys(dictionary)
+                    let message = Message(dictionary: dictionary)
                     if let chatPartner = message.chatPartnerId() {
                         self.messagesDictionary[chatPartner] = message
                         self.messages = Array(self.messagesDictionary.values)
                         self.messages.sort{(message1, message2) -> Bool in
-                            return message1.timestamp! > message2.timestamp!
+                            return message1.timestamp > message2.timestamp
                         }
                     }
                     DispatchQueue.main.async {
@@ -56,13 +76,12 @@ class MessagesController: UITableViewController {
         let reference = Database.database().reference().child("messages")
         reference.observe(.childAdded, with: {(snapshot) in
             if let dictionary = snapshot.value as? [String : AnyObject] {
-                let message = Message()
-                message.setValuesForKeys(dictionary)
+                let message = Message(dictionary: dictionary)
                 if let receiver = message.receiver {
                     self.messagesDictionary[receiver] = message
                     self.messages = Array(self.messagesDictionary.values)
                     self.messages.sort{(message1, message2) -> Bool in
-                        return message1.timestamp! > message2.timestamp!
+                        return message1.timestamp > message2.timestamp
                     }
                 }
                 DispatchQueue.main.async {
@@ -97,8 +116,7 @@ class MessagesController: UITableViewController {
             guard let dictionary = snapshot.value as? [String : AnyObject] else {
                 return
             }
-            let user = User()
-            user.setValuesForKeys(dictionary)
+            let user = User(dictionary: dictionary)
             user.id = chatPartnerId
             self.showConversationController(forUser: user)
         }, withCancel: nil)
@@ -108,8 +126,8 @@ class MessagesController: UITableViewController {
     @objc func handleNewMessage() {
         let newMessageController = NewMessageController()
         newMessageController.messagesController = self
-        let navigationController = UINavigationController(rootViewController: newMessageController)
-        present(newMessageController, animated: true, completion: nil)
+        let navController = UINavigationController(rootViewController: newMessageController)
+        present(navController, animated: true, completion: nil)
     }
     
     func checkUserLogIn() {
@@ -126,8 +144,7 @@ class MessagesController: UITableViewController {
         }
         Database.database().reference().child("users").child(uid).observeSingleEvent(of: .value, with: {(snapshot) in
             if let dict = snapshot.value as? [String : AnyObject] {
-                let user = User()
-                user.setValuesForKeys(dict)
+                let user = User(dictionary: dict)
                 self.setupNavBarWithUser(user: user)
             }
         }, withCancel: nil)

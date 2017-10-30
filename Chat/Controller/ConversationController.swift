@@ -26,20 +26,24 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         }
         let userMessagesReference = Database.database().reference().child("user-messages").child(uid)
         userMessagesReference.observe(.childAdded, with: {(snapshot) in
+            print(snapshot)
             let messageId = snapshot.key
-            let messagesReference = Database.database().reference().child(messageId)
+            let messagesReference = Database.database().reference().child("messages").child(messageId)
             messagesReference.observeSingleEvent(of: .value, with: {(snapshot) in
+                print(snapshot)
                 guard let dictionary = snapshot.value as? [String : AnyObject] else {
                     return
                 }
-                let message = Message()
-                message.setValuesForKeys(dictionary)
+                print(dictionary)
+                let message = Message(dictionary: dictionary)
+                print(message)
                 if message.chatPartnerId() == self.user?.id {
                     self.messages.append(message)
                     DispatchQueue.main.async {
                         self.collectionView?.reloadData()
                     }
                 }
+                print(self.messages.count)
             }, withCancel: nil)
         }, withCancel: nil)
     }
@@ -69,11 +73,12 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! ConversationMessageCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as? ConversationMessageCell
         let message = messages[indexPath.item]
-        cell.messageTextView.text = message.text
-        cell.bubleMessageWidthAnchor?.constant = estimateFrameForText(text: message.text!).width + 32
-        return cell
+        print(message.text)
+        cell?.messageTextView.text = message.text
+        cell?.bubleMessageWidthAnchor?.constant = estimateFrameForText(text: message.text!).width + 32
+        return cell!
     }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -125,9 +130,9 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         separatorLine.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(separatorLine)
         separatorLine.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
-        containerView.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
-        containerView.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
-        containerView.bottomAnchor.constraint(equalTo: containerView.topAnchor, constant: 1).isActive = true
+        separatorLine.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
+        separatorLine.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
+        separatorLine.bottomAnchor.constraint(equalTo: containerView.topAnchor, constant: 1).isActive = true
         
     }
     

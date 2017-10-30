@@ -33,6 +33,7 @@ class ConversationMessageCell: UICollectionViewCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         addSubview(bubbleMessageView)
+        addSubview(messageTextView)
         setupBubbleMessageView()
         setupMessageTextView()
     }

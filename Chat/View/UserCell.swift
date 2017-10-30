@@ -14,7 +14,7 @@ class UserCell: UITableViewCell {
     var message: Message? {
         didSet {
             setupNameAndAvatar()
-            self.detailTextLabel?.text = message?.text
+            detailTextLabel?.text = message?.text
             if let seconds =  message?.timestamp {
                 let timeDate = Date(timeIntervalSince1970: Double(seconds))
                 let dateFormatter = DateFormatter()
@@ -43,9 +43,9 @@ class UserCell: UITableViewCell {
     override func layoutSubviews() {
         super.layoutSubviews()
         
-        textLabel?.translatesAutoresizingMaskIntoConstraints = false
-        setupTextLabel()
-        setupDetailTextLabel()
+        textLabel?.frame = CGRect(x: 64, y: textLabel!.frame.origin.y - 2, width: textLabel!.frame.width, height: textLabel!.frame.height)
+        detailTextLabel?.frame = CGRect(x: 64, y: detailTextLabel!.frame.origin.y + 2, width: detailTextLabel!.frame.width, height: detailTextLabel!.frame.height)
+        
         
     }
     
@@ -83,13 +83,14 @@ class UserCell: UITableViewCell {
         addSubview(profileImageView)
         addSubview(timeLabel)
         setupProfileImage()
+        setupTimeLabel()
     }
     
     func setupTimeLabel() {
         timeLabel.rightAnchor.constraint(equalTo: self.rightAnchor).isActive = true
         timeLabel.topAnchor.constraint(equalTo: self.topAnchor, constant: 18).isActive = true
         timeLabel.widthAnchor.constraint(equalToConstant: 100).isActive = true
-        timeLabel.heightAnchor.constraint(equalTo: (textLabel?.heightAnchor)!).isActive = true
+        timeLabel.heightAnchor.constraint(equalTo: textLabel!.heightAnchor).isActive = true
     }
     
     func setupProfileImage() {

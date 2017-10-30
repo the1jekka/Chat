@@ -24,16 +24,16 @@ class NewMessageController: UITableViewController {
     }
     
     func fetchUser() {
-        Database.database().reference().child("users").observeSingleEvent(of: .childAdded, with: {(snapshot) in
+        Database.database().reference().child("users").observe(.childAdded, with: {(snapshot) in
             if let dict = snapshot.value as? [String : AnyObject] {
-                let user = User()
+                let user = User(dictionary: dict)
                 user.id = snapshot.key
-                user.setValuesForKeys(dict)
                 self.users.append(user)
                 
                 DispatchQueue.main.async {
                     self.tableView.reloadData()
                 }
+                
             }
         }, withCancel: nil)
     }
@@ -44,6 +44,18 @@ class NewMessageController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return users.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath) as? UserCell
+        let user = users[indexPath.row]
+        cell?.textLabel?.text = user.name
+        cell?.detailTextLabel?.text = user.email
+        if let userProfileImageURL = user.profileImageURL {
+            cell?.profileImageView.loadImageUsingCacheWithUrl(urlString: userProfileImageURL)
+        }
+        
+        return cell!
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -59,15 +71,4 @@ class NewMessageController: UITableViewController {
         }
     }
     
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath) as? UserCell
-        let user = users[indexPath.row]
-        cell?.textLabel?.text = user.name
-        cell?.detailTextLabel?.text = user.email
-        if let userProfileImageURL = user.profileImageURL {
-            cell?.profileImageView.loadImageUsingCacheWithUrl(urlString: userProfileImageURL)
-        }
-        
-        return cell!
-    }
 }

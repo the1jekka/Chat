@@ -15,11 +15,14 @@ class Message: NSObject {
     var text: String?
     var timestamp: Int?
     
+    init(dictionary: Dictionary<String, Any>) {
+        self.sender = dictionary["senderId"] as? String
+        self.receiver = dictionary["receiverId"] as? String
+        self.text = dictionary["text"] as? String
+        self.timestamp = dictionary["timestamp"] as? Int
+    }
+    
     func chatPartnerId() -> String? {
-        if sender == Auth.auth().currentUser?.uid {
-            return receiver
-        } else {
-            return sender
-        }
+        return sender == Auth.auth().currentUser?.uid ? sender : receiver
     }
 }

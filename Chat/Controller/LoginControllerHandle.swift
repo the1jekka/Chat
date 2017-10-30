@@ -36,7 +36,7 @@ extension LoginController: UIImagePickerControllerDelegate, UINavigationControll
         dismiss(animated: true, completion: nil)
     }
     
-    @objc func handleRegister() {
+    func handleRegister() {
         guard let email = emailTextField.text else {
             print("Form is not valid")
             return
@@ -91,8 +91,8 @@ extension LoginController: UIImagePickerControllerDelegate, UINavigationControll
                 print(err!)
                 return
             }
-            let user = User()
-            user.setValuesForKeys(values)
+            let user = User(dictionary: values)
+            //user.setValuesForKeys(values)
             self.messagesController?.setupNavBarWithUser(user: user)
             self.dismiss(animated: true, completion: nil)
         })
