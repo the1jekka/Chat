@@ -53,11 +53,9 @@ class MessagesController: UITableViewController {
         let reference = Database.database().reference().child("user-messages").child(uid)
         reference.observe(.childAdded, with: {(snapshot) in
             let userId = snapshot.key
-            print(userId)
             let conversationReference = Database.database().reference().child("user-messages").child(uid).child(userId)
             conversationReference.observe(.childAdded, with: {(snapshot) in
                 let messageId = snapshot.key
-                print(messageId)
                 self.fetchMessageAndAttemptReaload(messageId: messageId)
             }, withCancel: nil)
         }, withCancel: nil)
@@ -67,12 +65,9 @@ class MessagesController: UITableViewController {
         let messageReference = Database.database().reference().child("messages").child(messageId)
         messageReference.observeSingleEvent(of: .value, with: {(snapshot) in
             if let dictionary = snapshot.value as? [String : AnyObject] {
-                print(dictionary)
                 let message = Message(dictionary: dictionary)
-                print(message.chatPartnerId())
                 if let chatPartner = message.chatPartnerId() {
                     self.messagesDictionary[chatPartner] = message
-                    print(self.messagesDictionary)
                 }
                 self.attemptReloadTable()
             }
@@ -122,7 +117,6 @@ class MessagesController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath) as! UserCell
         let message = messages[indexPath.row]
-        print(message)
         cell.message = message
         return cell
     }
