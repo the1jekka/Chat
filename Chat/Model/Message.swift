@@ -23,6 +23,6 @@ class Message: NSObject {
     }
     
     func chatPartnerId() -> String? {
-        return sender == Auth.auth().currentUser?.uid ? sender : receiver
+        return sender == Auth.auth().currentUser?.uid ? receiver : sender
     }
 }

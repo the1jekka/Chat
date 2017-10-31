@@ -14,6 +14,8 @@ class UserCell: UITableViewCell {
     var message: Message? {
         didSet {
             setupNameAndAvatar()
+            print(message?.text!)
+            print(message?.receiver)
             detailTextLabel?.text = message?.text
             if let seconds =  message?.timestamp {
                 let timeDate = Date(timeIntervalSince1970: Double(seconds))
@@ -25,12 +27,15 @@ class UserCell: UITableViewCell {
     }
     
     private func setupNameAndAvatar() {
-        
         if let id = message?.chatPartnerId() {
+            print(id)
             let reference = Database.database().reference().child("users").child(id)
             reference.observeSingleEvent(of: .value, with: {(snapshot) in
+                print(snapshot.key)
                 if let dictionary = snapshot.value as? [String : AnyObject] {
-                    self.textLabel?.text = dictionary["text"] as? String
+                    print(dictionary)
+                    print(Auth.auth().currentUser?.uid)
+                    self.textLabel?.text = dictionary["name"] as? String
                     if let profileImageUrl = dictionary["profileImageURL"] as? String {
                         self.profileImageView.loadImageUsingCacheWithUrl(urlString: profileImageUrl)
                         
