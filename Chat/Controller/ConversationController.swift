@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class ConversationController: UICollectionViewController, UITextFieldDelegate, UICollectionViewDelegateFlowLayout {
+class ConversationController: UICollectionViewController, UITextFieldDelegate, UICollectionViewDelegateFlowLayout, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     var user: User? {
         didSet {
@@ -39,6 +39,10 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
                 self.messages.append(message)
                 DispatchQueue.main.async {
                     self.collectionView?.reloadData()
+                    if self.messages.count > 0 {
+                        let indexPath = IndexPath(item: self.messages.count - 1, section: 0)
+                        self.collectionView?.scrollToItem(at: indexPath, at: .bottom, animated: true)
+                    }
                 }
             }, withCancel: nil)
         }, withCancel: nil)
@@ -63,13 +67,25 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         collectionView?.keyboardDismissMode = .interactive
         
         //setupInputs()
-        //setupKeyboard()
+        setupKeyboard()
     }
     
     lazy var inputContainerView: UIView = {
+        
         let containerView = UIView()
         containerView.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
         containerView.backgroundColor = .white
+        
+        let attachImageView = UIImageView()
+        attachImageView.image = UIImage(named: "attachIcon")
+        attachImageView.translatesAutoresizingMaskIntoConstraints = false
+        attachImageView.isUserInteractionEnabled = true
+        attachImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleAttachImageTap)))
+        containerView.addSubview(attachImageView)
+        attachImageView.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
+        attachImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
+        attachImageView.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        attachImageView.heightAnchor.constraint(equalToConstant: 44).isActive = true
         
         let sendButton = UIButton(type: .system)
         sendButton.setTitle("Send", for: .normal)
@@ -82,7 +98,7 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         sendButton.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
         
         containerView.addSubview(inputTextField)
-        inputTextField.leftAnchor.constraint(equalTo: containerView.leftAnchor, constant: 8).isActive = true
+        inputTextField.leftAnchor.constraint(equalTo: attachImageView.rightAnchor, constant: 8).isActive = true
         inputTextField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
         inputTextField.rightAnchor.constraint(equalTo: sendButton.leftAnchor, constant: -8).isActive = true
         inputTextField.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
@@ -95,8 +111,51 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         separatorLine.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
         separatorLine.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
         separatorLine.bottomAnchor.constraint(equalTo: containerView.topAnchor, constant: 1).isActive = true
+    
         return containerView
     }()
+    
+    @objc func handleAttachImageTap() {
+        let imagePickerController = UIImagePickerController()
+        imagePickerController.allowsEditing = true
+        imagePickerController.delegate = self
+        present(imagePickerController, animated: true, completion: nil)
+    }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        var selectedImage: UIImage?
+        
+        if let editedImage = info["UIImagePickerControllerEditedImage"] as? UIImage{
+            selectedImage = editedImage
+        } else if let originalImage = info["UIImagePickerControllerOriginalImage"] as? UIImage{
+            selectedImage = originalImage
+        }
+        if let selected = selectedImage {
+            uploadToFirebaseStorage(image: selected)
+        }
+        dismiss(animated: true, completion: nil)
+    }
+    
+    private func uploadToFirebaseStorage(image: UIImage) {
+        let imageName = UUID().uuidString
+        let reference = Storage.storage().reference().child("message-images").child(imageName)
+        if let uploadedData = UIImageJPEGRepresentation(image, 0.5) {
+            reference.putData(uploadedData, metadata: nil, completion: {(metadata, error) in
+                if error != nil {
+                    print("Failed to upload image \(error)")
+                    return
+                }
+                
+                if let imageURL = metadata?.downloadURL()?.absoluteString {
+                    self.sendMessageWithImageUrl(imageUrl: imageURL, image: image)
+                }
+            })
+        }
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        dismiss(animated: true, completion: nil)
+    }
     
     override var inputAccessoryView: UIView? {
         return inputContainerView
@@ -107,13 +166,21 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
     }
     
     func setupKeyboard() {
-        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillShow), name: Notification.Name.UIKeyboardWillShow, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide), name: Notification.Name.UIKeyboardWillHide, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardDidShow), name: Notification.Name.UIKeyboardDidShow, object: nil)
+       // NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillShow), name: Notification.Name.UIKeyboardWillShow, object: nil)
+        //NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide), name: Notification.Name.UIKeyboardWillHide, object: nil)
     }
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc func handleKeyboardDidShow() {
+        if messages.count > 0 {
+            let indexPath = IndexPath(item: messages.count - 1, section: 0)
+            collectionView?.scrollToItem(at: indexPath, at: .bottom, animated: true)
+        }
     }
     
     @objc func handleKeyboardWillShow(notification: Notification) {
@@ -145,7 +212,11 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         let message = messages[indexPath.item]
         cell?.messageTextView.text = message.text
         setupCell(cell: cell!, message: message)
-        cell?.bubleMessageWidthAnchor?.constant = estimateFrameForText(text: message.text!).width + 32
+        if let text = message.text {
+            cell?.bubbleMessageWidthAnchor?.constant = estimateFrameForText(text: text).width + 32
+        } else if message.imageUrl != nil {
+            cell?.bubbleMessageWidthAnchor?.constant = 200
+        }
         return cell!
     }
     
@@ -157,15 +228,23 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         if message.sender == Auth.auth().currentUser?.uid {
             cell.bubbleMessageView.backgroundColor = ConversationMessageCell.blueColor
             cell.messageTextView.textColor = .white
-            cell.bubleMessageRightAnchor?.isActive = true
-            cell.bubleMessageLeftAnchor?.isActive = false
+            cell.bubbleMessageRightAnchor?.isActive = true
+            cell.bubbleMessageLeftAnchor?.isActive = false
             cell.profileImageView.isHidden = true
         } else {
             cell.bubbleMessageView.backgroundColor = ConversationMessageCell.greyColor
             cell.messageTextView.textColor = .black
-            cell.bubleMessageRightAnchor?.isActive = false
-            cell.bubleMessageLeftAnchor?.isActive = true
+            cell.bubbleMessageRightAnchor?.isActive = false
+            cell.bubbleMessageLeftAnchor?.isActive = true
             cell.profileImageView.isHidden = false
+        }
+
+        if let imageMessageUrl = message.imageUrl {
+            cell.messageImageView.loadImageUsingCacheWithUrl(urlString: imageMessageUrl)
+            cell.messageImageView.isHidden = false
+            cell.bubbleMessageView.backgroundColor = .clear
+        } else {
+            cell.messageImageView.isHidden = true
         }
     }
     
@@ -175,8 +254,13 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         var height: CGFloat = 88
-        if let text = messages[indexPath.item].text {
+        let message = messages[indexPath.item]
+        if let text = message.text {
             height = estimateFrameForText(text: text).height + 20
+        } else if let imageWidth = message.imageWidth,
+            let imageHeight = message.imageHeight {
+            height = CGFloat(Double(imageHeight) / Double(imageWidth) * 200)
+            print("height = \(height)")
         }
         let width = UIScreen.main.bounds.width
         return CGSize(width: width, height: height)
@@ -227,12 +311,24 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
     }
     
     @objc func handleSend()  {
+        
+        let options = ["text" : inputTextField.text!] as [String : Any]
+        sendMessageWithOptions(options: options)
+    }
+    
+    private func sendMessageWithImageUrl(imageUrl: String, image: UIImage) {
+        let options: [String : Any] =  ["imageUrl" : imageUrl, "imageWidth" : image.size.width, "imageHeight" : image.size.height]
+        sendMessageWithOptions(options: options)
+    }
+    
+    private func sendMessageWithOptions(options: [String : Any]) {
         let reference = Database.database().reference().child("messages")
         let childReference = reference.childByAutoId()
         let senderId = Auth.auth().currentUser?.uid
         let receiverId = user?.id!
         let timestamp: Int = Int(NSDate().timeIntervalSince1970)
-        let values = ["text" : inputTextField.text!, "senderId" : senderId, "receiverId" : receiverId, "timestamp" : timestamp] as [String : Any]
+        var values = ["senderId" : senderId, "receiverId" : receiverId, "timestamp" : timestamp] as [String : Any]
+        options.forEach({values[$0] = $1})
         //reference.updateChildValues(values)
         childReference.updateChildValues(values, withCompletionBlock: {(error, ref) in
             if error != nil {

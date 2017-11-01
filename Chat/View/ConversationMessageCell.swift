@@ -15,6 +15,7 @@ class ConversationMessageCell: UICollectionViewCell {
         textView.font = UIFont.systemFont(ofSize: 16)
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.backgroundColor = .clear
+        textView.isEditable = false
         textView.textColor = .white
         return textView
     }()
@@ -40,19 +41,38 @@ class ConversationMessageCell: UICollectionViewCell {
         return imageView
     }()
     
-    var bubleMessageWidthAnchor: NSLayoutConstraint?
-    var bubleMessageRightAnchor: NSLayoutConstraint?
-    var bubleMessageLeftAnchor: NSLayoutConstraint?
+    let messageImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.layer.cornerRadius = 16
+        imageView.layer.masksToBounds = true
+        imageView.contentMode = .scaleAspectFill
+        return imageView
+    }()
+    
+    var bubbleMessageWidthAnchor: NSLayoutConstraint?
+    var bubbleMessageRightAnchor: NSLayoutConstraint?
+    var bubbleMessageLeftAnchor: NSLayoutConstraint?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         addSubview(bubbleMessageView)
         addSubview(messageTextView)
         addSubview(profileImageView)
+        bubbleMessageView.addSubview(messageImageView)
         
-        setupProfileImageView()
+        
         setupBubbleMessageView()
         setupMessageTextView()
+        setupMessageImageView()
+        setupProfileImageView()
+    }
+    
+    func setupMessageImageView() {
+        messageImageView.leftAnchor.constraint(equalTo: bubbleMessageView.leftAnchor).isActive = true
+        messageImageView.rightAnchor.constraint(equalTo: bubbleMessageView.rightAnchor).isActive = true
+        messageImageView.topAnchor.constraint(equalTo: bubbleMessageView.topAnchor).isActive = true
+        messageImageView.bottomAnchor.constraint(equalTo: bubbleMessageView.bottomAnchor).isActive = true
     }
     
     func setupProfileImageView() {
@@ -63,13 +83,13 @@ class ConversationMessageCell: UICollectionViewCell {
     }
     
     func setupBubbleMessageView() {
-        bubleMessageRightAnchor = bubbleMessageView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8)
-        bubleMessageRightAnchor?.isActive = true
-        bubleMessageLeftAnchor = bubbleMessageView.leftAnchor.constraint(equalTo: profileImageView.rightAnchor, constant: 8)
-        bubleMessageLeftAnchor?.isActive = false
+        bubbleMessageRightAnchor = bubbleMessageView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8)
+        bubbleMessageRightAnchor?.isActive = true
+        bubbleMessageLeftAnchor = bubbleMessageView.leftAnchor.constraint(equalTo: profileImageView.rightAnchor, constant: 8)
+        bubbleMessageLeftAnchor?.isActive = false
         bubbleMessageView.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
-        bubleMessageWidthAnchor = bubbleMessageView.widthAnchor.constraint(equalToConstant: 200)
-        bubleMessageWidthAnchor?.isActive = true
+        bubbleMessageWidthAnchor = bubbleMessageView.widthAnchor.constraint(equalToConstant: 200)
+        bubbleMessageWidthAnchor?.isActive = true
         bubbleMessageView.heightAnchor.constraint(equalTo: self.heightAnchor).isActive = true
     }
     

@@ -62,7 +62,8 @@ extension LoginController: UIImagePickerControllerDelegate, UINavigationControll
                 return
             }
             
-            let imageName = NSUUID().uuidString
+            let imageName = UUID().uuidString
+            print("LoginController: \(imageName)")
             let storageReference = Storage.storage().reference().child("profile_images").child("\(imageName).png")
             
             //if let uploadData = UIImagePNGRepresentation(self.profileImageView.image!)
