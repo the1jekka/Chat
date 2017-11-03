@@ -9,6 +9,8 @@
 import UIKit
 
 class ConversationMessageCell: UICollectionViewCell {
+    
+    var conversationController: ConversationController?
 
     let messageTextView: UITextView = {
         let textView = UITextView()
@@ -41,12 +43,14 @@ class ConversationMessageCell: UICollectionViewCell {
         return imageView
     }()
     
-    let messageImageView: UIImageView = {
+    lazy var messageImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.layer.cornerRadius = 16
         imageView.layer.masksToBounds = true
         imageView.contentMode = .scaleAspectFill
+        imageView.isUserInteractionEnabled = true
+        imageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleZoomTap)))
         return imageView
     }()
     
@@ -66,6 +70,12 @@ class ConversationMessageCell: UICollectionViewCell {
         setupMessageTextView()
         setupMessageImageView()
         setupProfileImageView()
+    }
+    
+    @objc func handleZoomTap(tapGesture: UITapGestureRecognizer) {
+        if let imageView = tapGesture.view as? UIImageView {
+            self.conversationController?.performZooming(startImageView: imageView)
+        }
     }
     
     func setupMessageImageView() {
