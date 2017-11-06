@@ -41,6 +41,33 @@ class MessagesController: UITableViewController {
         checkUserLogIn()
         //navigationItem.rightBarButtonItem = UIBarButtonItem(title: "New ", style: .plain, target: self, action: #selector(handleNewMessage))
         tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
+        tableView.allowsMultipleSelectionDuringEditing = true
+    }
+    
+    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            return
+        }
+        
+        let message = messages[indexPath.row]
+        
+        if let chatPartnerId = message.chatPartnerId() {
+            Database.database().reference().child("user-messages").child(uid).child(chatPartnerId).removeValue(completionBlock: { (error, reference) in
+                if error != nil {
+                    print("Failed to delete: \(error)")
+                    return
+                }
+                
+                self.messagesDictionary.removeValue(forKey: chatPartnerId)
+                self.attemptReloadTable()
+                //self.messages.remove(at: indexPath.row)
+                //self.tableView.deleteRows(at: [indexPath], with: .automatic)
+            })
+        }
     }
     
     var messages = Array<Message>()
@@ -58,6 +85,9 @@ class MessagesController: UITableViewController {
                 let messageId = snapshot.key
                 self.fetchMessageAndAttemptReaload(messageId: messageId)
             }, withCancel: nil)
+        }, withCancel: nil)
+        reference.observe(.childRemoved, with: { (snapshot) in
+            self.messagesDictionary.removeValue(forKey: snapshot.key)
         }, withCancel: nil)
     }
     
