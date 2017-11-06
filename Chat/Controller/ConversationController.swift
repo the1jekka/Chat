@@ -48,13 +48,6 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         }, withCancel: nil)
     }
     
-    lazy var inputTextField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = "Enter a message"
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.delegate = self
-        return textField
-    }()
     let cellId = "cellId"
     
     override func viewDidLoad() {
@@ -73,52 +66,13 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
     @objc func handleHideKeyboard() {
         //collectionView?.endEditing(true)
         //inputContainerView.endEditing(true)
-        inputTextField.resignFirstResponder()
+        inputContainerView.inputTextField.resignFirstResponder()
     }
     
-    lazy var inputContainerView: UIView = {
-        
-        let containerView = UIView()
-        containerView.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
-        containerView.backgroundColor = .white
-        
-        let attachImageView = UIImageView()
-        attachImageView.image = UIImage(named: "attachIcon")
-        attachImageView.translatesAutoresizingMaskIntoConstraints = false
-        attachImageView.isUserInteractionEnabled = true
-        attachImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleAttachImageTap)))
-        containerView.addSubview(attachImageView)
-        attachImageView.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
-        attachImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
-        attachImageView.widthAnchor.constraint(equalToConstant: 44).isActive = true
-        attachImageView.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        
-        let sendButton = UIButton(type: .system)
-        sendButton.setTitle("Send", for: .normal)
-        sendButton.translatesAutoresizingMaskIntoConstraints = false
-        sendButton.addTarget(self, action: #selector(handleSend), for: .touchUpInside)
-        containerView.addSubview(sendButton)
-        sendButton.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
-        sendButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
-        sendButton.widthAnchor.constraint(equalToConstant: 80).isActive = true
-        sendButton.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
-        
-        containerView.addSubview(inputTextField)
-        inputTextField.leftAnchor.constraint(equalTo: attachImageView.rightAnchor, constant: 8).isActive = true
-        inputTextField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
-        inputTextField.rightAnchor.constraint(equalTo: sendButton.leftAnchor, constant: -8).isActive = true
-        inputTextField.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
-        
-        let separatorLine = UIView()
-        separatorLine.backgroundColor = UIColor(r: 220, g: 220, b: 220)
-        separatorLine.translatesAutoresizingMaskIntoConstraints = false
-        containerView.addSubview(separatorLine)
-        separatorLine.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
-        separatorLine.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
-        separatorLine.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
-        separatorLine.bottomAnchor.constraint(equalTo: containerView.topAnchor, constant: 1).isActive = true
-    
-        return containerView
+    lazy var inputContainerView: ConversationInputContainerView = {
+        let conversationInputContainerView = ConversationInputContainerView(frame: CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50))
+        conversationInputContainerView.conversationController = self
+        return conversationInputContainerView
     }()
     
     @objc func handleAttachImageTap() {
@@ -360,11 +314,11 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         sendButton.widthAnchor.constraint(equalToConstant: 80).isActive = true
         sendButton.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
         
-        containerView.addSubview(inputTextField)
-        inputTextField.leftAnchor.constraint(equalTo: containerView.leftAnchor, constant: 8).isActive = true
-        inputTextField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
-        inputTextField.rightAnchor.constraint(equalTo: sendButton.leftAnchor, constant: -8).isActive = true
-        inputTextField.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
+        containerView.addSubview(inputContainerView.inputTextField)
+        inputContainerView.inputTextField.leftAnchor.constraint(equalTo: containerView.leftAnchor, constant: 8).isActive = true
+        inputContainerView.inputTextField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
+        inputContainerView.inputTextField.rightAnchor.constraint(equalTo: sendButton.leftAnchor, constant: -8).isActive = true
+        inputContainerView.inputTextField.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
         
         let separatorLine = UIView()
         separatorLine.backgroundColor = UIColor(r: 220, g: 220, b: 220)
@@ -379,7 +333,7 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
     
     @objc func handleSend()  {
         
-        let options = ["text" : inputTextField.text!] as [String : Any]
+        let options = ["text" : inputContainerView.inputTextField.text!] as [String : Any]
         sendMessageWithOptions(options: options)
     }
     
@@ -402,18 +356,13 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
                 print(error)
                 return
             }
-            self.inputTextField.text = nil
+            self.inputContainerView.inputTextField.text = nil
             let userMessagesReference = Database.database().reference().child("user-messages").child(senderId!).child(receiverId!)
             let messageId = childReference.key
             userMessagesReference.updateChildValues([messageId: 1])
             let recipientUserMessagesReference = Database.database().reference().child("user-messages").child(receiverId!).child(senderId!)
             recipientUserMessagesReference.updateChildValues([messageId: 1])
         })
-    }
-    
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        handleSend()
-        return true
     }
     
     var startFrame: CGRect?
