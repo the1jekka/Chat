@@ -7,10 +7,51 @@
 //
 
 import UIKit
+import AVFoundation
 
 class ConversationMessageCell: UICollectionViewCell {
     
     var conversationController: ConversationController?
+    var message: Message?
+    
+    let activityIndicatorView: UIActivityIndicatorView = {
+        let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicator.hidesWhenStopped = true
+        return activityIndicator
+    }()
+    
+    lazy var playButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = .red
+        button.setImage(UIImage(named: "play"), for: .normal)
+        button.addTarget(self, action: #selector(handlePlay), for: .touchUpInside)
+        return button
+    }()
+    
+    var playerLayer: AVPlayerLayer?
+    var player: AVPlayer?
+    
+    @objc func handlePlay() {
+        if let videoUrlString = message?.videoUrl,
+            let videoUrl = URL(string: videoUrlString) {
+            player = AVPlayer(url: videoUrl)
+            playerLayer = AVPlayerLayer(player: player)
+            playerLayer?.frame = bubbleMessageView.bounds
+            bubbleMessageView.layer.addSublayer(playerLayer!)
+            player?.play()
+            activityIndicatorView.startAnimating()
+            playButton.isHidden = true
+        }
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        playerLayer?.removeFromSuperlayer()
+        player?.pause()
+        activityIndicatorView.stopAnimating()
+    }
 
     let messageTextView: UITextView = {
         let textView = UITextView()
@@ -64,18 +105,39 @@ class ConversationMessageCell: UICollectionViewCell {
         addSubview(messageTextView)
         addSubview(profileImageView)
         bubbleMessageView.addSubview(messageImageView)
-        
+        bubbleMessageView.addSubview(playButton)
+        bubbleMessageView.addSubview(activityIndicatorView)
         
         setupBubbleMessageView()
+        setupPlayButton()
+        setupActivityIndicatorView()
         setupMessageTextView()
         setupMessageImageView()
         setupProfileImageView()
     }
     
     @objc func handleZoomTap(tapGesture: UITapGestureRecognizer) {
+        if message?.videoUrl != nil {
+            return
+        }
+        
         if let imageView = tapGesture.view as? UIImageView {
             self.conversationController?.performZooming(startImageView: imageView)
         }
+    }
+    
+    func setupActivityIndicatorView() {
+        activityIndicatorView.centerXAnchor.constraint(equalTo: bubbleMessageView.centerXAnchor).isActive = true
+        activityIndicatorView.centerYAnchor.constraint(equalTo: bubbleMessageView.centerYAnchor).isActive = true
+        activityIndicatorView.widthAnchor.constraint(equalToConstant: 50).isActive = true
+        activityIndicatorView.heightAnchor.constraint(equalToConstant: 50).isActive = true
+    }
+    
+    func setupPlayButton() {
+        playButton.centerXAnchor.constraint(equalTo: bubbleMessageView.centerXAnchor).isActive = true
+        playButton.centerYAnchor.constraint(equalTo: bubbleMessageView.centerYAnchor).isActive = true
+        playButton.widthAnchor.constraint(equalToConstant: 50).isActive = true
+        playButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
     }
     
     func setupMessageImageView() {

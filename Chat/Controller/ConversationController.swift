@@ -158,13 +158,13 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
                 }
             }
         })
-        uploadTask.observe(.progress) { (snapshot) in
+        /*uploadTask.observe(.progress) { (snapshot) in
             <#code#>
         }
         
         uploadTask.observe(.success) { (<#StorageTaskSnapshot#>) in
             <#code#>
-        }
+        }*/
     }
     
     private func thumbnailImageForUrl(url: URL) -> UIImage? {
@@ -271,6 +271,7 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as? ConversationMessageCell
         cell?.conversationController = self
         let message = messages[indexPath.item]
+        cell?.message = message
         cell?.messageTextView.text = message.text
         setupCell(cell: cell!, message: message)
         if let text = message.text {
@@ -280,6 +281,9 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
             cell?.bubbleMessageWidthAnchor?.constant = 200
             cell?.messageTextView.isHidden = true
         }
+        
+        cell?.playButton.isHidden = message.videoUrl == nil
+        
         return cell!
     }
     
