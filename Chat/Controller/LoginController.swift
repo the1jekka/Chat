@@ -8,8 +8,22 @@
 
 import UIKit
 import Firebase
+import FBSDKLoginKit
 
-class LoginController: UIViewController {
+class LoginController: UIViewController, FBSDKLoginButtonDelegate {
+    func loginButton(_ loginButton: FBSDKLoginButton!, didCompleteWith result: FBSDKLoginManagerLoginResult!, error: Error!) {
+        if let errorMessage = error {
+            print(errorMessage)
+            return
+        }
+        
+        print("Successful")
+    }
+    
+    func loginButtonDidLogOut(_ loginButton: FBSDKLoginButton!) {
+        print("logout")
+    }
+    
     var messagesController: MessagesController?
 
     let inputsContainerView: UIView = {
@@ -34,7 +48,12 @@ class LoginController: UIViewController {
         return button
     }()
     
-    
+    lazy var facebookLoginButton: FBSDKLoginButton = {
+        let button = FBSDKLoginButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.delegate = self
+        return button
+    }()
     
     let nameTextField: UITextField = {
         let textField = UITextField()
@@ -102,11 +121,13 @@ class LoginController: UIViewController {
         view.addSubview(loginRegisterButton)
         view.addSubview(profileImageView)
         view.addSubview(loginRegisterSegmentedControl)
+        view.addSubview(facebookLoginButton)
         
         setupInputsContainerView()
         setupLoginRegisterButton()
         setupProfileImageView()
         setupLoginRegisterSegmentedControl()
+        setupFacebookLoginButton()
     }
     
     func setupLoginRegisterSegmentedControl() {
@@ -131,8 +152,8 @@ class LoginController: UIViewController {
     func setupInputsContainerView() {
         inputsContainerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         inputsContainerView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
-        inputsContainerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 1, constant: -25).isActive = true
-       inputsContainerViewHeightAnchor = inputsContainerView.heightAnchor.constraint(equalToConstant: 150)
+        inputsContainerView.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -25).isActive = true
+        inputsContainerViewHeightAnchor = inputsContainerView.heightAnchor.constraint(equalToConstant: 150)
         inputsContainerViewHeightAnchor?.isActive = true
         
         inputsContainerView.addSubview(nameTextField)
@@ -151,7 +172,7 @@ class LoginController: UIViewController {
     func setupLoginRegisterButton() {
         loginRegisterButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         loginRegisterButton.centerYAnchor.constraint(equalTo: inputsContainerView.bottomAnchor, constant: 30).isActive = true
-        loginRegisterButton.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor, multiplier: 1).isActive = true
+        loginRegisterButton.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor).isActive = true
         loginRegisterButton.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: 1 / 3).isActive = true
     }
     
@@ -193,6 +214,13 @@ class LoginController: UIViewController {
             passwordTextFieldHeightAnchor?.isActive = true
     }
     
+    func setupFacebookLoginButton() {
+        facebookLoginButton.centerXAnchor.constraint(equalTo: loginRegisterButton.centerXAnchor).isActive = true
+        facebookLoginButton.topAnchor.constraint(equalTo: loginRegisterButton.bottomAnchor, constant: 8).isActive = true
+        facebookLoginButton.widthAnchor.constraint(equalTo: loginRegisterButton.widthAnchor).isActive = true
+        facebookLoginButton.heightAnchor.constraint(equalTo: loginRegisterButton.heightAnchor).isActive = true
+    }
+    
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
@@ -201,18 +229,6 @@ class LoginController: UIViewController {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
 }
 
 extension UIColor {

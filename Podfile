@@ -6,9 +6,12 @@ target 'Chat' do
   use_frameworks!
 
   # Pods for Chat
-pod 'Firebase/Database'
-pod 'Firebase/Auth'
-pod 'Firebase/Storage'
+	pod 'Firebase/Database'
+	pod 'Firebase/Auth'
+	pod 'Firebase/Storage'
+	pod 'FBSDKCoreKit'
+	pod 'FBSDKShareKit'
+	pod 'FBSDKLoginKit'
 
   target 'ChatTests' do
     inherit! :search_paths

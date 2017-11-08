@@ -374,7 +374,6 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         self.startImageView?.isHidden = true
         startFrame = startImageView.superview?.convert(startImageView.frame, to: nil)
         let zoomingImageView = UIImageView(frame: startFrame!)
-        zoomingImageView.backgroundColor = .red
         zoomingImageView.image = startImageView.image
         zoomingImageView.isUserInteractionEnabled = true
         zoomingImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleZoomOut)))
