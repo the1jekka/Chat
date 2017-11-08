@@ -6,6 +6,8 @@ matrix:
     - os: osx
       osx_image: xcode9
       env: SCHEME="Chat"
-
+      
+before script:
+  - pod update
 script:
   - xcodebuild -scheme Chat -workspace Chat.xcworkspace -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 8 Plus,OS=11.0'
