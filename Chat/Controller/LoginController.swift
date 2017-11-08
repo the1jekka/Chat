@@ -17,7 +17,13 @@ class LoginController: UIViewController, FBSDKLoginButtonDelegate {
             return
         }
         
-        print("Successful")
+        FBSDKGraphRequest(graphPath: "/me", parameters: ["fields" : "id, name, email"]).start { (connection, result, err) in
+            if let error = err {
+                print("Failed to start graph request: \(error)")
+                return
+            }
+            print(result)
+        }
     }
     
     func loginButtonDidLogOut(_ loginButton: FBSDKLoginButton!) {
