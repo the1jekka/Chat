@@ -6,7 +6,11 @@ matrix:
     - os: osx
       osx_image: xcode9
       env: SCHEME="Chat"
-      
+
+before_install:
+   - rvm use system
+   - sudo gem install cocoapods -v '1.1.1'
+   
 before script:
   - pod update
 script:
