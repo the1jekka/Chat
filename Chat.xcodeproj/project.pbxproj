@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2B2EFBDFBBADDA05A29ACC08 /* Pods_Chat.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2706D112A4FD894E7D77B8D4 /* Pods_Chat.framework */; };
+		841D511A1FC6E05500BAAADF /* Twitter.plist in Resources */ = {isa = PBXBuildFile; fileRef = 841D51191FC6E05500BAAADF /* Twitter.plist */; };
 		8428086C1FA5D84400F706BD /* UserCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8428086B1FA5D84300F706BD /* UserCell.swift */; };
 		843BC2B21FA1D44B002232A9 /* NewMessageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843BC2B11FA1D44B002232A9 /* NewMessageController.swift */; };
 		843BC2B51FA1DA5A002232A9 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843BC2B41FA1DA5A002232A9 /* User.swift */; };
@@ -53,6 +54,7 @@
 		1A97649A6FB07E6A6CAFB51F /* Pods-Chat.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Chat.release.xcconfig"; path = "Pods/Target Support Files/Pods-Chat/Pods-Chat.release.xcconfig"; sourceTree = "<group>"; };
 		2706D112A4FD894E7D77B8D4 /* Pods_Chat.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Chat.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D9C8D120B03D9F0545308A5 /* Pods-ChatTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ChatTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-ChatTests/Pods-ChatTests.release.xcconfig"; sourceTree = "<group>"; };
+		841D51191FC6E05500BAAADF /* Twitter.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Twitter.plist; sourceTree = "<group>"; };
 		8428086B1FA5D84300F706BD /* UserCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCell.swift; sourceTree = "<group>"; };
 		843BC2B11FA1D44B002232A9 /* NewMessageController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMessageController.swift; sourceTree = "<group>"; };
 		843BC2B41FA1DA5A002232A9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
@@ -196,6 +198,7 @@
 				84FBD9DC1F9F47F4005D779C /* LaunchScreen.storyboard */,
 				84FBD9DF1F9F47F4005D779C /* Info.plist */,
 				849C94011FA11D90000F3B3A /* GoogleService-Info.plist */,
+				841D51191FC6E05500BAAADF /* Twitter.plist */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -348,6 +351,7 @@
 			files = (
 				849C94021FA120DB000F3B3A /* GoogleService-Info.plist in Resources */,
 				84FBD9DE1F9F47F4005D779C /* LaunchScreen.storyboard in Resources */,
+				841D511A1FC6E05500BAAADF /* Twitter.plist in Resources */,
 				84FBD9DB1F9F47F4005D779C /* Assets.xcassets in Resources */,
 				84FBD9D91F9F47F4005D779C /* Main.storyboard in Resources */,
 			);
@@ -465,6 +469,7 @@
 				"${BUILT_PRODUCTS_DIR}/FBSDKCoreKit/FBSDKCoreKit.framework",
 				"${BUILT_PRODUCTS_DIR}/FBSDKLoginKit/FBSDKLoginKit.framework",
 				"${BUILT_PRODUCTS_DIR}/FBSDKShareKit/FBSDKShareKit.framework",
+				"${BUILT_PRODUCTS_DIR}/GTMOAuth2/GTMOAuth2.framework",
 				"${BUILT_PRODUCTS_DIR}/GTMSessionFetcher/GTMSessionFetcher.framework",
 				"${BUILT_PRODUCTS_DIR}/GoogleToolboxForMac/GoogleToolboxForMac.framework",
 				"${BUILT_PRODUCTS_DIR}/leveldb-library/leveldb.framework",
@@ -476,6 +481,7 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FBSDKCoreKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FBSDKLoginKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FBSDKShareKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GTMOAuth2.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GTMSessionFetcher.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleToolboxForMac.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/leveldb.framework",
@@ -507,9 +513,14 @@
 			files = (
 			);
 			inputPaths = (
+				"${SRCROOT}/Pods/Target Support Files/Pods-Chat/Pods-Chat-resources.sh",
+				"${PODS_ROOT}/GoogleSignIn/Resources/GoogleSignIn.bundle",
+				"${PODS_ROOT}/TwitterKit/iOS/TwitterKit.framework/TwitterKitResources.bundle",
+				"${PODS_ROOT}/TwitterKit/iOS/TwitterKit.framework/TwitterShareExtensionUIResources.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

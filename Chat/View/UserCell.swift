@@ -27,11 +27,11 @@ class UserCell: UITableViewCell {
     private func setupNameAndAvatar() {
         if let id = message?.chatPartnerId() {
             let reference = Database.database().reference().child("users").child(id)
-            reference.observeSingleEvent(of: .value, with: {(snapshot) in
+            reference.observeSingleEvent(of: .value, with: { [weak self] (snapshot) in
                 if let dictionary = snapshot.value as? [String : AnyObject] {
-                    self.textLabel?.text = dictionary["name"] as? String
+                    self?.textLabel?.text = dictionary["name"] as? String
                     if let profileImageUrl = dictionary["profileImageURL"] as? String {
-                        self.profileImageView.loadImageUsingCacheWithUrl(urlString: profileImageUrl)
+                        self?.profileImageView.loadImageUsingCacheWithUrl(urlString: profileImageUrl)
                         
                     }
                 }

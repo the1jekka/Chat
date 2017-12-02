@@ -8,6 +8,9 @@
 
 import UIKit
 import Firebase
+import FBSDKLoginKit
+import GoogleSignIn
+import TwitterKit
 
 fileprivate func < <T: Comparable>(lhs: T?, rhs: T?) -> Bool {
     switch (lhs, rhs) {
@@ -78,12 +81,12 @@ class MessagesController: UITableViewController {
             return
         }
         let reference = Database.database().reference().child("user-messages").child(uid)
-        reference.observe(.childAdded, with: {(snapshot) in
+        reference.observe(.childAdded, with: { [weak self] (snapshot) in
             let userId = snapshot.key
             let conversationReference = Database.database().reference().child("user-messages").child(uid).child(userId)
             conversationReference.observe(.childAdded, with: {(snapshot) in
                 let messageId = snapshot.key
-                self.fetchMessageAndAttemptReaload(messageId: messageId)
+                self?.fetchMessageAndAttemptReaload(messageId: messageId)
             }, withCancel: nil)
         }, withCancel: nil)
         reference.observe(.childRemoved, with: { (snapshot) in
@@ -93,13 +96,13 @@ class MessagesController: UITableViewController {
     
     private func fetchMessageAndAttemptReaload(messageId: String) {
         let messageReference = Database.database().reference().child("messages").child(messageId)
-        messageReference.observeSingleEvent(of: .value, with: {(snapshot) in
+        messageReference.observeSingleEvent(of: .value, with: { [weak self] (snapshot) in
             if let dictionary = snapshot.value as? [String : AnyObject] {
                 let message = Message(dictionary: dictionary)
                 if let chatPartner = message.chatPartnerId() {
-                    self.messagesDictionary[chatPartner] = message
+                    self?.messagesDictionary[chatPartner] = message
                 }
-                self.attemptReloadTable()
+                self?.attemptReloadTable()
             }
         }, withCancel: nil)
     }
@@ -123,18 +126,18 @@ class MessagesController: UITableViewController {
     
     func observeMessages() {
         let reference = Database.database().reference().child("messages")
-        reference.observe(.childAdded, with: {(snapshot) in
+        reference.observe(.childAdded, with: { [weak self] (snapshot) in
             if let dictionary = snapshot.value as? [String : AnyObject] {
                 let message = Message(dictionary: dictionary)
                 if let receiver = message.receiver {
-                    self.messagesDictionary[receiver] = message
-                    self.messages = Array(self.messagesDictionary.values)
-                    self.messages.sort{(message1, message2) -> Bool in
+                    self?.messagesDictionary[receiver] = message
+                    self?.messages = Array((self?.messagesDictionary.values)!)
+                    self?.messages.sort{(message1, message2) -> Bool in
                         return message1.timestamp > message2.timestamp
                     }
                 }
                 DispatchQueue.main.async {
-                    self.tableView.reloadData()
+                    self?.tableView.reloadData()
                 }
             }
         }, withCancel: nil)
@@ -161,13 +164,13 @@ class MessagesController: UITableViewController {
             return
         }
         let reference = Database.database().reference().child("users").child(chatPartnerId)
-        reference.observeSingleEvent(of: .value, with: {(snapshot) in
+        reference.observeSingleEvent(of: .value, with: { [weak self] (snapshot) in
             guard let dictionary = snapshot.value as? [String : AnyObject] else {
                 return
             }
             let user = User(dictionary: dictionary)
             user.id = chatPartnerId
-            self.showConversationController(forUser: user)
+            self?.showConversationController(forUser: user)
         }, withCancel: nil)
         
     }
@@ -191,10 +194,10 @@ class MessagesController: UITableViewController {
         guard let uid = Auth.auth().currentUser?.uid else {
             return
         }
-        Database.database().reference().child("users").child(uid).observeSingleEvent(of: .value, with: {(snapshot) in
+        Database.database().reference().child("users").child(uid).observeSingleEvent(of: .value, with: { [weak self] (snapshot) in
             if let dict = snapshot.value as? [String : AnyObject] {
                 let user = User(dictionary: dict)
-                self.setupNavBarWithUser(user: user)
+                self?.setupNavBarWithUser(user: user)
             }
         }, withCancel: nil)
     }
@@ -249,8 +252,36 @@ class MessagesController: UITableViewController {
         conversationController.user = user
         navigationController?.pushViewController(conversationController, animated: true)
     }
+    
+    func checkFacebookLogin() {
+        if FBSDKAccessToken.current() != nil {
+            let loginManager = FBSDKLoginManager()
+            loginManager.logOut()
+        }
+    }
+    
+    func checkGoogleLogin() {
+        if GIDSignIn.sharedInstance().hasAuthInKeychain() {
+            GIDSignIn.sharedInstance().signOut()
+        }
+    }
+    
+    func checkTwitterLogin() {
+        let sessionStore = Twitter.sharedInstance().sessionStore
+        
+        if let userID = sessionStore.session()?.userID {
+            sessionStore.logOutUserID(userID)
+        }
+    }
+    
+    func checkSocialLogin() {
+        checkFacebookLogin()
+        checkGoogleLogin()
+        checkTwitterLogin()
+    }
 
     @objc func handleLogout() {
+        checkSocialLogin()
         do {
             try Auth.auth().signOut()
         } catch let logoutError {

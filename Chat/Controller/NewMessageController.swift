@@ -24,14 +24,14 @@ class NewMessageController: UITableViewController {
     }
     
     func fetchUser() {
-        Database.database().reference().child("users").observe(.childAdded, with: {(snapshot) in
+        Database.database().reference().child("users").observe(.childAdded, with: { [weak self] (snapshot) in
             if let dict = snapshot.value as? [String : AnyObject] {
                 let user = User(dictionary: dict)
                 user.id = snapshot.key
-                self.users.append(user)
+                self?.users.append(user)
                 
                 DispatchQueue.main.async {
-                    self.tableView.reloadData()
+                    self?.tableView.reloadData()
                 }
                 
             }
@@ -49,8 +49,8 @@ class NewMessageController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath) as? UserCell
         let user = users[indexPath.row]
-        cell?.textLabel?.text = user.name
-        cell?.detailTextLabel?.text = user.email
+        cell?.textLabel?.text = user.name!
+        cell?.detailTextLabel?.text = user.email!
         if let userProfileImageURL = user.profileImageURL {
             cell?.profileImageView.loadImageUsingCacheWithUrl(urlString: userProfileImageURL)
         }

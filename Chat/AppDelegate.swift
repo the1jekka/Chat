@@ -9,18 +9,38 @@
 import UIKit
 import Firebase
 import FBSDKCoreKit
+import GoogleSignIn
+import TwitterKit
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate{
 
     var window: UIWindow?
 
-
+    var consumerKey: String = ""
+    var consumerSecret: String = ""
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
         FirebaseApp.configure()
         
+        GIDSignIn.sharedInstance().clientID = FirebaseApp.app()?.options.clientID
+        
         FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
+        
+        if let url = Bundle.main.url(forResource: "Twitter", withExtension: "plist") {
+            do {
+                let data = try Data(contentsOf: url)
+                let dictionary = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as! [String : Any]
+                consumerKey = dictionary["consumer_key"] as! String
+                consumerSecret = dictionary["consumer_secret"] as! String
+            } catch {
+                print(error)
+            }
+        }
+        print(consumerKey)
+        print(consumerSecret)
+        Twitter.sharedInstance().start(withConsumerKey: consumerKey, consumerSecret: consumerSecret)
         
         window = UIWindow(frame: UIScreen.main.bounds)
         window?.makeKeyAndVisible()
@@ -31,7 +51,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
+        Twitter.sharedInstance().application(app, open: url, options: options)
+        
         let handled = FBSDKApplicationDelegate.sharedInstance().application(app, open: url, sourceApplication: options[UIApplicationOpenURLOptionsKey.sourceApplication] as! String, annotation: options[UIApplicationOpenURLOptionsKey.annotation])
+        
+        GIDSignIn.sharedInstance().handle(url,
+                                     sourceApplication:options[UIApplicationOpenURLOptionsKey.sourceApplication] as! String,
+                                     annotation: options[UIApplicationOpenURLOptionsKey.annotation])
+        
         return handled
     }
 

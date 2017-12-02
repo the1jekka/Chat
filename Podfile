@@ -12,6 +12,8 @@ target 'Chat' do
 	pod 'FBSDKCoreKit'
 	pod 'FBSDKShareKit'
 	pod 'FBSDKLoginKit'
+	pod 'GoogleSignIn'
+	pod 'TwitterKit'
 
   target 'ChatTests' do
     inherit! :search_paths

@@ -8,6 +8,7 @@
 
 import UIKit
 import Firebase
+import FBSDKLoginKit
 
 extension LoginController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
@@ -37,6 +38,7 @@ extension LoginController: UIImagePickerControllerDelegate, UINavigationControll
     }
     
     func handleRegister() {
+        
         guard let email = emailTextField.text else {
             print("Form is not valid")
             return
@@ -52,7 +54,7 @@ extension LoginController: UIImagePickerControllerDelegate, UINavigationControll
             return
         }
         
-        Auth.auth().createUser(withEmail: email, password: password, completion: {(user, error) in
+        Auth.auth().createUser(withEmail: email, password: password, completion: { [weak self] (user, error) in
             if error != nil {
                 print(error!)
                 return
@@ -63,12 +65,11 @@ extension LoginController: UIImagePickerControllerDelegate, UINavigationControll
             }
             
             let imageName = UUID().uuidString
-            print("LoginController: \(imageName)")
             let storageReference = Storage.storage().reference().child("profile_images").child("\(imageName).png")
             
             //if let uploadData = UIImagePNGRepresentation(self.profileImageView.image!)
             
-            if let profileImage = self.profileImageView.image, let uploadData = UIImageJPEGRepresentation(profileImage, 0.1) {
+            if let profileImage = self?.profileImageView.image, let uploadData = UIImageJPEGRepresentation(profileImage, 0.1) {
                 storageReference.putData(uploadData, metadata: nil, completion: {(metadata, error) in
                     if error != nil {
                         print(error)
@@ -76,17 +77,17 @@ extension LoginController: UIImagePickerControllerDelegate, UINavigationControll
                     }
                     if let profileImageURL = metadata?.downloadURL()?.absoluteString {
                         let values = ["name" : name, "email" : email, "profileImageURL" : profileImageURL]
-                        self.registerUserIntoDatabase(uid: uid, values: values as [String : AnyObject])
+                        self?.registerUserIntoDatabase(uid: uid, values: values as [String : AnyObject])
                     }
                 })
             }
         })
     }
     
-    private func registerUserIntoDatabase(uid: String, values: [String : AnyObject]) {
+    func registerUserIntoDatabase(uid: String, values: [String : AnyObject]) {
         let reference = Database.database().reference()
         let usersReference = reference.child("users").child(uid)
-        usersReference.updateChildValues(values, withCompletionBlock: {(err, ref) in
+        usersReference.updateChildValues(values, withCompletionBlock: {[weak self] (err, ref) in
             
             if err != nil {
                 print(err!)
@@ -94,8 +95,8 @@ extension LoginController: UIImagePickerControllerDelegate, UINavigationControll
             }
             let user = User(dictionary: values)
             //user.setValuesForKeys(values)
-            self.messagesController?.setupNavBarWithUser(user: user)
-            self.dismiss(animated: true, completion: nil)
+            self?.messagesController?.setupNavBarWithUser(user: user)
+            self?.dismiss(animated: true, completion: nil)
         })
     }
     
@@ -109,15 +110,14 @@ extension LoginController: UIImagePickerControllerDelegate, UINavigationControll
             print("Form is not valid")
             return
         }
-        
-        Auth.auth().signIn(withEmail: email, password: password, completion: {(user, error) in
+        Auth.auth().signIn(withEmail: email, password: password, completion: { [weak self] (user, error) in
             if error != nil {
                 print(error!)
                 return
             }
             
-            self.messagesController?.setupNavBarTitle()
-            self.dismiss(animated: true, completion: nil)
+            self?.messagesController?.setupNavBarTitle()
+            self?.dismiss(animated: true, completion: nil)
         })
     }
     

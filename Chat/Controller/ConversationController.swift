@@ -30,7 +30,7 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
             return
         }
         let userMessagesReference = Database.database().reference().child("user-messages").child(uid).child(receiver)
-        userMessagesReference.observe(.childAdded, with: {(snapshot) in
+        userMessagesReference.observe(.childAdded, with: { [weak self] (snapshot) in
             let messageId = snapshot.key
             let messagesReference = Database.database().reference().child("messages").child(messageId)
             messagesReference.observeSingleEvent(of: .value, with: {(snapshot) in
@@ -38,11 +38,11 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
                     return
                 }
                 let message = Message(dictionary: dictionary)
-                self.messages.append(message)
+                self?.messages.append(message)
                 DispatchQueue.main.async {
-                    self.collectionView?.reloadData()
-                    let indexPath = IndexPath(item: self.messages.count - 1, section: 0)
-                    self.collectionView?.scrollToItem(at: indexPath, at: .bottom, animated: true)
+                    self?.collectionView?.reloadData()
+                    let indexPath = IndexPath(item: (self?.messages.count)! - 1, section: 0)
+                    self?.collectionView?.scrollToItem(at: indexPath, at: .bottom, animated: true)
                 }
             }, withCancel: nil)
         }, withCancel: nil)
@@ -95,18 +95,18 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
     
     private func handleVideoSelectedForURL(url: URL) {
         let filename = UUID().uuidString + ".mov"
-        let uploadTask = Storage.storage().reference().child("message-movies").child(filename).putFile(from: url, metadata: nil, completion: { (metadata, error) in
+        let uploadTask = Storage.storage().reference().child("message-movies").child(filename).putFile(from: url, metadata: nil, completion: { [weak self] (metadata, error) in
             if let nonNilError = error {
                 print("Failed upload of video \(nonNilError)")
                 return
             }
             
             if let videoURL = metadata?.downloadURL()?.absoluteString {
-                if let thumbnailImage = self.thumbnailImageForUrl(url: url) {
-                    self.uploadToFirebaseStorage(image: thumbnailImage, completion: { (imageURL) in
+                if let thumbnailImage = self?.thumbnailImageForUrl(url: url) {
+                    self?.uploadToFirebaseStorage(image: thumbnailImage, completion: { (imageURL) in
                         let options: Dictionary<String, Any> =
                             ["imageUrl" : imageURL, "imageWidth" : thumbnailImage.size.width, "imageHeight" : thumbnailImage.size.height, "videoUrl" : videoURL]
-                        self.sendMessageWithOptions(options: options)
+                        self?.sendMessageWithOptions(options: options)
                     })
                    
                 }
@@ -351,12 +351,12 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         var values = ["senderId" : senderId, "receiverId" : receiverId, "timestamp" : timestamp] as [String : Any]
         options.forEach({values[$0] = $1})
         //reference.updateChildValues(values)
-        childReference.updateChildValues(values, withCompletionBlock: {(error, ref) in
+        childReference.updateChildValues(values, withCompletionBlock: { [weak self] (error, ref) in
             if error != nil {
                 print(error)
                 return
             }
-            self.inputContainerView.inputTextField.text = nil
+            self?.inputContainerView.inputTextField.text = nil
             let userMessagesReference = Database.database().reference().child("user-messages").child(senderId!).child(receiverId!)
             let messageId = childReference.key
             userMessagesReference.updateChildValues([messageId: 1])
@@ -368,27 +368,52 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
     var startFrame: CGRect?
     var blackBackgroundView: UIView?
     var startImageView: UIImageView?
+    var startXConstraint: NSLayoutConstraint?
+    var startYConstraint: NSLayoutConstraint?
+    var startWidthConstraint: NSLayoutConstraint?
+    var startHeightConstraint: NSLayoutConstraint?
     
-    func performZooming(startImageView: UIImageView) {
-        self.startImageView = startImageView
+    func performZooming(startsImageView: UIImageView) {
+        self.startImageView = startsImageView
         self.startImageView?.isHidden = true
-        startFrame = startImageView.superview?.convert(startImageView.frame, to: nil)
-        let zoomingImageView = UIImageView(frame: startFrame!)
-        zoomingImageView.image = startImageView.image
+        startFrame = startsImageView.superview?.convert(startsImageView.frame, to: nil)
+        let zoomingImageView = UIImageView()
+        zoomingImageView.translatesAutoresizingMaskIntoConstraints = false
+        //startXConstraint = zoomingImageView.centerXAnchor.constraint(equalTo: startImageView.centerXAnchor)
+        //startYConstraint = zoomingImageView.centerYAnchor.constraint(equalTo: startImageView.centerYAnchor)
+        zoomingImageView.image = startsImageView.image
         zoomingImageView.isUserInteractionEnabled = true
         zoomingImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleZoomOut)))
+        //zoomingImageView.centerXAnchor.constraint(equalTo: startsImageView.centerXAnchor).isActive = true
+        //zoomingImageView.centerYAnchor.constraint(equalTo: startsImageView.centerYAnchor).isActive = true
+        //zoomingImageView.widthAnchor.constraint(equalTo: startsImageView.widthAnchor).isActive = true
+        //zoomingImageView.heightAnchor.constraint(equalTo: startsImageView.heightAnchor).isActive = true
         if let keyWindow = UIApplication.shared.keyWindow {
-            blackBackgroundView = UIView(frame: keyWindow.frame)
+            //blackBackgroundView = UIView(frame: keyWindow.frame)
+            blackBackgroundView = UIView()
+            blackBackgroundView?.translatesAutoresizingMaskIntoConstraints = false
             blackBackgroundView?.backgroundColor = .black
             blackBackgroundView?.alpha = 0
             keyWindow.addSubview(blackBackgroundView!)
             keyWindow.addSubview(zoomingImageView)
+            
+            blackBackgroundView?.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+            blackBackgroundView?.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+            blackBackgroundView?.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
+            blackBackgroundView?.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
+            
             UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
                 self.blackBackgroundView?.alpha = 1
                 self.inputContainerView.alpha = 0
                 let height = self.startFrame!.height / self.startFrame!.width * keyWindow.frame.width
-                zoomingImageView.frame = CGRect(x: 0, y: 0, width: keyWindow.frame.width, height: height)
-                zoomingImageView.center = keyWindow.center
+                zoomingImageView.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+                zoomingImageView.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
+                zoomingImageView.widthAnchor.constraint(equalTo: self.view.widthAnchor).isActive = true
+                zoomingImageView.heightAnchor.constraint(equalToConstant: height).isActive = true
+                self.view.layoutIfNeeded()
+                //keyWindow.layoutIfNeeded()
+                //zoomingImageView.frame = CGRect(x: 0, y: 0, width: keyWindow.frame.width, height: height)
+                //zoomingImageView.center = keyWindow.center
             }, completion: { (comleted) in
                 
             })
@@ -399,8 +424,14 @@ class ConversationController: UICollectionViewController, UITextFieldDelegate, U
         if let imageView = tapGesture.view {
             imageView.layer.cornerRadius = 16
             imageView.clipsToBounds = true
+            imageView.translatesAutoresizingMaskIntoConstraints = false
             UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
-                imageView.frame = self.startFrame!
+                //imageView.frame = self.startFrame!
+                imageView.centerXAnchor.constraint(equalTo: (self.startImageView?.centerXAnchor)!).isActive = true
+                imageView.centerYAnchor.constraint(equalTo: (self.startImageView?.centerYAnchor)!).isActive = true
+                imageView.widthAnchor.constraint(equalTo: (self.startImageView?.widthAnchor)!).isActive = true
+                imageView.heightAnchor.constraint(equalTo: (self.startImageView?.heightAnchor)!).isActive = true
+                self.view.layoutIfNeeded()
                 self.blackBackgroundView?.alpha = 0
                 self.inputContainerView.alpha = 1
             }, completion: { (comleted) in

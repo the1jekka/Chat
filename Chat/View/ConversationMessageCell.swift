@@ -122,7 +122,8 @@ class ConversationMessageCell: UICollectionViewCell {
         }
         
         if let imageView = tapGesture.view as? UIImageView {
-            self.conversationController?.performZooming(startImageView: imageView)
+            print(imageView.constraints)
+            self.conversationController?.performZooming(startsImageView: imageView)
         }
     }
     
