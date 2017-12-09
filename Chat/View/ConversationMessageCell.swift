@@ -36,13 +36,14 @@ class ConversationMessageCell: UICollectionViewCell {
     @objc func handlePlay() {
         if let videoUrlString = message?.videoUrl,
             let videoUrl = URL(string: videoUrlString) {
-            player = AVPlayer(url: videoUrl)
-            playerLayer = AVPlayerLayer(player: player)
-            playerLayer?.frame = bubbleMessageView.bounds
-            bubbleMessageView.layer.addSublayer(playerLayer!)
-            player?.play()
-            activityIndicatorView.startAnimating()
-            playButton.isHidden = true
+            self.player = AVPlayer(url: videoUrl)
+            self.playerLayer = AVPlayerLayer(player: player)
+            self.playerLayer?.frame = bubbleMessageView.bounds
+            self.bubbleMessageView.layer.addSublayer(playerLayer!)
+            self.player?.play()
+            self.activityIndicatorView.startAnimating()
+            self.playButton.isHidden = true
+            
         }
     }
     

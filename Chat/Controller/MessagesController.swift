@@ -34,15 +34,16 @@ fileprivate func > <T: Comparable>(lhs: T?, rhs: T?) -> Bool {
 
 class MessagesController: UITableViewController {
 
-    let cellId = "cellId"
+    private let cellId = "cellId"
+    private var timer: Timer?
+    private var messages = Array<Message>()
+    private var messagesDictionary = Dictionary<String, Message>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "newMessageIcon"), style: .plain, target: self, action: #selector(handleNewMessage))
-        checkUserLogIn()
-        //navigationItem.rightBarButtonItem = UIBarButtonItem(title: "New ", style: .plain, target: self, action: #selector(handleNewMessage))
+        self.configure()
+        self.checkUserLogIn()
         tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
         tableView.allowsMultipleSelectionDuringEditing = true
     }
@@ -52,95 +53,12 @@ class MessagesController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            return
-        }
-        
-        let message = messages[indexPath.row]
-        
-        if let chatPartnerId = message.chatPartnerId() {
-            Database.database().reference().child("user-messages").child(uid).child(chatPartnerId).removeValue(completionBlock: { (error, reference) in
-                if error != nil {
-                    print("Failed to delete: \(error)")
-                    return
-                }
-                
-                self.messagesDictionary.removeValue(forKey: chatPartnerId)
-                self.attemptReloadTable()
-                //self.messages.remove(at: indexPath.row)
-                //self.tableView.deleteRows(at: [indexPath], with: .automatic)
-            })
-        }
-    }
-    
-    var messages = Array<Message>()
-    var messagesDictionary = Dictionary<String, Message>()
-    
-    func observeUserMessages() {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            return
-        }
-        let reference = Database.database().reference().child("user-messages").child(uid)
-        reference.observe(.childAdded, with: { [weak self] (snapshot) in
-            let userId = snapshot.key
-            let conversationReference = Database.database().reference().child("user-messages").child(uid).child(userId)
-            conversationReference.observe(.childAdded, with: {(snapshot) in
-                let messageId = snapshot.key
-                self?.fetchMessageAndAttemptReaload(messageId: messageId)
-            }, withCancel: nil)
-        }, withCancel: nil)
-        reference.observe(.childRemoved, with: { (snapshot) in
-            self.messagesDictionary.removeValue(forKey: snapshot.key)
-        }, withCancel: nil)
-    }
-    
-    private func fetchMessageAndAttemptReaload(messageId: String) {
-        let messageReference = Database.database().reference().child("messages").child(messageId)
-        messageReference.observeSingleEvent(of: .value, with: { [weak self] (snapshot) in
-            if let dictionary = snapshot.value as? [String : AnyObject] {
-                let message = Message(dictionary: dictionary)
-                if let chatPartner = message.chatPartnerId() {
-                    self?.messagesDictionary[chatPartner] = message
-                }
-                self?.attemptReloadTable()
-            }
-        }, withCancel: nil)
+        self.deleteConversation(indexPath: indexPath)
     }
     
     private func attemptReloadTable() {
         self.timer?.invalidate()
         self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
-    }
-    
-    var timer: Timer?
-    
-    @objc func handleReloadTable() {
-        self.messages = Array(self.messagesDictionary.values)
-        self.messages.sort{(message1, message2) -> Bool in
-            return message1.timestamp > message2.timestamp
-        }
-        DispatchQueue.main.async {
-            self.tableView.reloadData()
-        }
-    }
-    
-    func observeMessages() {
-        let reference = Database.database().reference().child("messages")
-        reference.observe(.childAdded, with: { [weak self] (snapshot) in
-            if let dictionary = snapshot.value as? [String : AnyObject] {
-                let message = Message(dictionary: dictionary)
-                if let receiver = message.receiver {
-                    self?.messagesDictionary[receiver] = message
-                    self?.messages = Array((self?.messagesDictionary.values)!)
-                    self?.messages.sort{(message1, message2) -> Bool in
-                        return message1.timestamp > message2.timestamp
-                    }
-                }
-                DispatchQueue.main.async {
-                    self?.tableView.reloadData()
-                }
-            }
-        }, withCancel: nil)
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -159,47 +77,36 @@ class MessagesController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let message = messages[indexPath.row]
-        guard let chatPartnerId = message.chatPartnerId() else {
-            return
-        }
-        let reference = Database.database().reference().child("users").child(chatPartnerId)
-        reference.observeSingleEvent(of: .value, with: { [weak self] (snapshot) in
-            guard let dictionary = snapshot.value as? [String : AnyObject] else {
-                return
-            }
-            let user = User(dictionary: dictionary)
-            user.id = chatPartnerId
-            self?.showConversationController(forUser: user)
-        }, withCancel: nil)
-        
+        self.showConversationControllerForUser(indexPath: indexPath)
     }
     
-    @objc func handleNewMessage() {
-        let newMessageController = NewMessageController()
-        newMessageController.messagesController = self
-        let navController = UINavigationController(rootViewController: newMessageController)
-        present(navController, animated: true, completion: nil)
-    }
     
-    func checkUserLogIn() {
-        if Auth.auth().currentUser?.uid == nil {
-            perform(#selector(handleLogout), with: nil, afterDelay: 0)
-        } else {
-            setupNavBarTitle()
-        }
-    }
     
     func setupNavBarTitle() {
         guard let uid = Auth.auth().currentUser?.uid else {
             return
         }
         Database.database().reference().child("users").child(uid).observeSingleEvent(of: .value, with: { [weak self] (snapshot) in
+            guard let strongSelf = self else { return }
             if let dict = snapshot.value as? [String : AnyObject] {
                 let user = User(dictionary: dict)
-                self?.setupNavBarWithUser(user: user)
+                strongSelf.setupNavBarWithUser(user: user)
             }
         }, withCancel: nil)
+    }
+}
+
+// MARK: -
+// MARK: - Configure
+
+extension MessagesController {
+    private func configure() {
+        self.setupNavigationBar()
+    }
+    
+    private func setupNavigationBar() {
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "newMessageIcon"), style: .plain, target: self, action: #selector(handleNewMessage))
     }
     
     func setupNavBarWithUser(user: User){
@@ -246,11 +153,162 @@ class MessagesController: UITableViewController {
         titleView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showConversationController)))
         
     }
+}
+
+// MARK: -
+// MARK: - Functions For Tableview
+
+fileprivate extension MessagesController {
+    func deleteConversation(indexPath: IndexPath) {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            return
+        }
+        
+        let message = messages[indexPath.row]
+        
+        if let chatPartnerId = message.chatPartnerId() {
+            Database.database().reference().child("user-messages").child(uid).child(chatPartnerId).removeValue(completionBlock: { (error, reference) in
+                if let removeError = error {
+                    print("Failed to delete: \(removeError)")
+                    return
+                }
+                
+                self.messagesDictionary.removeValue(forKey: chatPartnerId)
+                self.attemptReloadTable()
+                //self.messages.remove(at: indexPath.row)
+                //self.tableView.deleteRows(at: [indexPath], with: .automatic)
+            })
+        }
+    }
+    
+    @objc func handleReloadTable() {
+        self.messages = Array(self.messagesDictionary.values)
+        self.messages.sort{(message1, message2) -> Bool in
+            return message1.timestamp > message2.timestamp
+        }
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
+    }
+}
+
+// MARK: -
+// MARK: - Messages Action
+
+fileprivate extension MessagesController {
+    func observeUserMessages() {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            return
+        }
+        let reference = Database.database().reference().child("user-messages").child(uid)
+        reference.observe(.childAdded, with: { [weak self] (snapshot) in
+            guard let strongSelf = self else { return }
+            let userId = snapshot.key
+            let conversationReference = Database.database().reference().child("user-messages").child(uid).child(userId)
+            conversationReference.observe(.childAdded, with: {(snapshot) in
+                let messageId = snapshot.key
+                strongSelf.fetchMessageAndAttemptReaload(messageId: messageId)
+            }, withCancel: nil)
+            }, withCancel: nil)
+        reference.observe(.childRemoved, with: { [weak self] (snapshot) in
+            guard let strongSelf = self else { return }
+            strongSelf.messagesDictionary.removeValue(forKey: snapshot.key)
+        }, withCancel: nil)
+    }
+    
+    private func fetchMessageAndAttemptReaload(messageId: String) {
+        let messageReference = Database.database().reference().child("messages").child(messageId)
+        messageReference.observeSingleEvent(of: .value, with: { [weak self] (snapshot) in
+            guard let strongSelf = self else { return }
+            if let dictionary = snapshot.value as? [String : AnyObject] {
+                let message = Message(dictionary: dictionary)
+                if let chatPartner = message.chatPartnerId() {
+                    strongSelf.messagesDictionary[chatPartner] = message
+                }
+                strongSelf.attemptReloadTable()
+            }
+            }, withCancel: nil)
+    }
+    
+    func observeMessages() {
+        let reference = Database.database().reference().child("messages")
+        reference.observe(.childAdded, with: { [weak self] (snapshot) in
+            guard let strongSelf = self else { return }
+            if let dictionary = snapshot.value as? [String : AnyObject] {
+                let message = Message(dictionary: dictionary)
+                if let receiver = message.receiver {
+                    strongSelf.messagesDictionary[receiver] = message
+                    strongSelf.messages = Array((self?.messagesDictionary.values)!)
+                    strongSelf.messages.sort{(message1, message2) -> Bool in
+                        return message1.timestamp > message2.timestamp
+                    }
+                }
+                DispatchQueue.main.async {
+                    self?.tableView.reloadData()
+                }
+            }
+            }, withCancel: nil)
+    }
+}
+
+// MARK: -
+// MARK: - Transitions
+
+extension MessagesController {
+    @objc private func handleNewMessage() {
+        let newMessageController = NewMessageController()
+        newMessageController.messagesController = self
+        let navController = UINavigationController(rootViewController: newMessageController)
+        present(navController, animated: true, completion: nil)
+    }
+    
+    private func showConversationControllerForUser(indexPath: IndexPath) {
+        let message = messages[indexPath.row]
+        guard let chatPartnerId = message.chatPartnerId() else {
+            return
+        }
+        let reference = Database.database().reference().child("users").child(chatPartnerId)
+        reference.observeSingleEvent(of: .value, with: { [weak self] (snapshot) in
+            guard let strongSelf = self else { return }
+            guard let dictionary = snapshot.value as? [String : AnyObject] else {
+                return
+            }
+            let user = User(dictionary: dictionary)
+            user.id = chatPartnerId
+            strongSelf.showConversationController(forUser: user)
+            }, withCancel: nil)
+    }
     
     @objc func showConversationController(forUser user: User) {
         let conversationController = ConversationController(collectionViewLayout: UICollectionViewFlowLayout())
         conversationController.user = user
         navigationController?.pushViewController(conversationController, animated: true)
+    }
+    
+    @objc private func handleLogout() {
+        checkSocialLogin()
+        do {
+            try Auth.auth().signOut()
+        } catch let logoutError {
+            print(logoutError)
+        }
+        
+        let loginController = LoginController()
+        loginController.messagesController = self
+        present(loginController, animated: true, completion: nil)
+    }
+}
+
+// MARK: -
+// MARK: - User Auth State
+
+fileprivate extension MessagesController {
+    func checkUserLogIn() {
+        if Auth.auth().currentUser?.uid == nil {
+            perform(#selector(handleLogout), with: nil, afterDelay: 0)
+        } else {
+            setupNavBarTitle()
+        }
     }
     
     func checkFacebookLogin() {
@@ -279,25 +337,4 @@ class MessagesController: UITableViewController {
         checkGoogleLogin()
         checkTwitterLogin()
     }
-
-    @objc func handleLogout() {
-        checkSocialLogin()
-        do {
-            try Auth.auth().signOut()
-        } catch let logoutError {
-            print(logoutError)
-        }
-        
-        let loginController = LoginController()
-        loginController.messagesController = self
-        present(loginController, animated: true, completion: nil)
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-
-
 }
-

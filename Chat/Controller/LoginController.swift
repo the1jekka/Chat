@@ -12,11 +12,11 @@ import FBSDKLoginKit
 import GoogleSignIn
 import TwitterKit
 
-class LoginController: UIViewController, FBSDKLoginButtonDelegate, GIDSignInUIDelegate, GIDSignInDelegate {
+class LoginController: UIViewController, UIViewControllerTransitioningDelegate {
     
     var messagesController: MessagesController?
 
-    let inputsContainerView: UIView = {
+    lazy var inputsContainerView: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor.white
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -25,14 +25,13 @@ class LoginController: UIViewController, FBSDKLoginButtonDelegate, GIDSignInUIDe
         return view
     }()
     
-    let loginRegisterButton: UIButton = {
-        let button = UIButton(type: .system)
+    let loginRegisterButton: TransitionSubmitButton = {
+        let button = TransitionSubmitButton(type: .system)
         button.backgroundColor = UIColor(r: 80, g: 101, b: 161)
         button.setTitle("Register", for: .normal)
         button.setTitleColor(.white, for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
-        
         button.addTarget(self, action: #selector(handleLoginRegister), for: .touchUpInside)
         
         return button
@@ -58,17 +57,17 @@ class LoginController: UIViewController, FBSDKLoginButtonDelegate, GIDSignInUIDe
     
     lazy var twitterLoginButton: TWTRLogInButton = {
         let button = TWTRLogInButton(logInCompletion: { [weak self] (session, error) in
+            guard let strongSelf = self else { return }
             if let err = error {
                 print(err)
             }
             
             guard let token = session?.authToken else { return }
             guard let secret = session?.authTokenSecret else { return }
-            print("token: \(token), secret: \(secret)")
             
             let credentials = TwitterAuthProvider.credential(withToken: token, secret: secret)
             print("credentials: \(credentials)")
-            self?.loginWithCredentials(credentials: credentials, type: "Twitter")
+            strongSelf.loginWithCredentials(credentials: credentials, type: "Twitter")
         })
         
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -123,7 +122,6 @@ class LoginController: UIViewController, FBSDKLoginButtonDelegate, GIDSignInUIDe
         return imageView
     }()
     
-    
     lazy var loginRegisterSegmentedControl: UISegmentedControl = {
         let segmentedControl = UISegmentedControl(items: ["Login", "Register"])
         segmentedControl.translatesAutoresizingMaskIntoConstraints = false
@@ -135,28 +133,184 @@ class LoginController: UIViewController, FBSDKLoginButtonDelegate, GIDSignInUIDe
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        view.backgroundColor = UIColor(r: 61, g: 91, b: 151)
         
-        view.addSubview(inputsContainerView)
-        view.addSubview(loginRegisterButton)
-        view.addSubview(profileImageView)
-        view.addSubview(loginRegisterSegmentedControl)
-        view.addSubview(facebookLoginButton)
-        view.addSubview(googleLoginButton)
-        view.addSubview(twitterLoginButton)
-        
-        setupInputsContainerView()
-        setupLoginRegisterButton()
-        setupProfileImageView()
-        setupLoginRegisterSegmentedControl()
-        setupFacebookLoginButton()
-        setupGoogleLoginButton()
-        setupTwitterLoginButton()
+        self.configure()
     }
     
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        return UIInterfaceOrientationMask.portrait
+    }
+    
+    override var shouldAutorotate: Bool {
+        return true
+    }
+    
+    var inputsContainerViewHeightAnchor: NSLayoutConstraint?
+    var nameTextFieldHeightAnchor: NSLayoutConstraint?
+    var emailTextFieldHeightAnchor: NSLayoutConstraint?
+    var passwordTextFieldHeightAnchor: NSLayoutConstraint?
+    
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        return .lightContent
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+    
+    func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        return FadeAnimator(transitionDuration: 0.5, startingAlpha: 0.0)
+    }
+    
+    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        return nil
+    }
+}
+
+// MARK: -
+// MARK: - Configure
+
+fileprivate extension LoginController {
+    func configure() {
+        self.view.backgroundColor = UIColor(r: 61, g: 91, b: 151)
+        
+        self.view.addSubview(self.inputsContainerView)
+        self.view.addSubview(self.loginRegisterButton)
+        self.view.addSubview(self.profileImageView)
+        self.view.addSubview(self.loginRegisterSegmentedControl)
+        self.view.addSubview(self.facebookLoginButton)
+        self.view.addSubview(self.googleLoginButton)
+        self.view.addSubview(self.twitterLoginButton)
+        
+        self.setupInputsContainerView()
+        self.setupLoginRegisterButton()
+        self.setupProfileImageView()
+        self.setupLoginRegisterSegmentedControl()
+        self.setupFacebookLoginButton()
+        self.setupGoogleLoginButton()
+        self.setupTwitterLoginButton()
+    }
+    
+    func setupInputsContainerView() {
+        self.inputsContainerView.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        self.inputsContainerView.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
+        self.inputsContainerView.widthAnchor.constraint(equalTo: self.view.widthAnchor, constant: -25).isActive = true
+        self.inputsContainerViewHeightAnchor = self.inputsContainerView.heightAnchor.constraint(equalTo: self.view.heightAnchor, multiplier: 1 / 5)
+        self.inputsContainerViewHeightAnchor?.isActive = true
+        self.inputsContainerView.addSubview(self.nameTextField)
+        self.inputsContainerView.addSubview(self.nameSeparatorView)
+        self.inputsContainerView.addSubview(self.emailTextField)
+        self.inputsContainerView.addSubview(self.emailSeparatorView)
+        self.inputsContainerView.addSubview(self.passwordTextField)
+        
+        self.setupNameTextField()
+        self.setupNameSeparatorView()
+        self.setupEmailTextField()
+        self.setupEmailSeparatorView()
+        self.setupPasswordTextField()
+    }
+    
+    func setupLoginRegisterButton() {
+        self.loginRegisterButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        self.loginRegisterButton.centerYAnchor.constraint(equalTo: self.inputsContainerView.bottomAnchor,
+                                                          constant: 30).isActive = true
+        self.loginRegisterButton.widthAnchor.constraint(equalTo: self.inputsContainerView.widthAnchor).isActive = true
+        self.loginRegisterButton.heightAnchor.constraint(equalTo: self.inputsContainerView.heightAnchor,
+                                                         multiplier: 1 / 3).isActive = true
+    }
+    
+    func setupNameTextField() {
+        self.nameTextField.leftAnchor.constraint(equalTo: self.inputsContainerView.leftAnchor, constant: 15).isActive = true
+        self.nameTextField.topAnchor.constraint(equalTo: self.inputsContainerView.topAnchor).isActive = true
+        self.nameTextField.widthAnchor.constraint(equalTo: self.inputsContainerView.widthAnchor, multiplier: 1).isActive = true
+        self.nameTextFieldHeightAnchor = self.nameTextField.heightAnchor.constraint(equalTo: self.inputsContainerView.heightAnchor,
+                                                                                    multiplier: 1 / 3)
+        self.nameTextFieldHeightAnchor?.isActive = true
+    }
+    
+    func setupNameSeparatorView() {
+        self.nameSeparatorView.leftAnchor.constraint(equalTo: self.inputsContainerView.leftAnchor).isActive = true
+        self.nameSeparatorView.topAnchor.constraint(equalTo: self.nameTextField.bottomAnchor).isActive = true
+        self.nameSeparatorView.widthAnchor.constraint(equalTo: self.inputsContainerView.widthAnchor, multiplier: 1).isActive = true
+        self.nameSeparatorView.heightAnchor.constraint(equalToConstant: 1).isActive = true
+    }
+    
+    func setupEmailTextField() {
+        self.emailTextField.leftAnchor.constraint(equalTo: self.inputsContainerView.leftAnchor, constant: 15).isActive = true
+        self.emailTextField.topAnchor.constraint(equalTo: self.nameTextField.bottomAnchor).isActive = true
+        self.emailTextField.widthAnchor.constraint(equalTo: self.inputsContainerView.widthAnchor,
+                                                   multiplier: 1).isActive = true
+        self.emailTextFieldHeightAnchor = self.emailTextField.heightAnchor.constraint(equalTo: self.inputsContainerView.heightAnchor, multiplier: 1 / 3)
+        self.emailTextFieldHeightAnchor?.isActive = true
+    }
+    
+    func setupEmailSeparatorView() {
+        self.emailSeparatorView.leftAnchor.constraint(equalTo: self.inputsContainerView.leftAnchor).isActive = true
+        self.emailSeparatorView.topAnchor.constraint(equalTo: self.emailTextField.bottomAnchor).isActive = true
+        self.emailSeparatorView.widthAnchor.constraint(equalTo: self.inputsContainerView.widthAnchor,
+                                                       multiplier: 1).isActive = true
+        self.emailSeparatorView.heightAnchor.constraint(equalToConstant: 1).isActive = true
+    }
+    
+    func setupPasswordTextField() {
+        self.passwordTextField.leftAnchor.constraint(equalTo: self.inputsContainerView.leftAnchor,
+                                                     constant: 15).isActive = true
+        self.passwordTextField.topAnchor.constraint(equalTo: self.emailTextField.bottomAnchor).isActive = true
+        self.passwordTextField.widthAnchor.constraint(equalTo: self.inputsContainerView.widthAnchor,
+                                                 multiplier: 1).isActive = true
+        self.passwordTextFieldHeightAnchor = self.passwordTextField.heightAnchor.constraint(equalTo: self.inputsContainerView.heightAnchor, multiplier: 1 / 3)
+        self.passwordTextFieldHeightAnchor?.isActive = true
+    }
+    
+    func setupFacebookLoginButton() {
+        self.facebookLoginButton.centerXAnchor.constraint(equalTo: self.loginRegisterButton.centerXAnchor).isActive = true
+        self.facebookLoginButton.topAnchor.constraint(equalTo: self.loginRegisterButton.bottomAnchor,
+                                                      constant: 8).isActive = true
+        self.facebookLoginButton.widthAnchor.constraint(equalTo: self.loginRegisterButton.widthAnchor).isActive = true
+        self.facebookLoginButton.heightAnchor.constraint(equalTo: self.loginRegisterButton.heightAnchor).isActive = true
+    }
+    
+    func setupGoogleLoginButton() {
+        self.googleLoginButton.centerXAnchor.constraint(equalTo: self.loginRegisterButton.centerXAnchor).isActive = true
+        self.googleLoginButton.topAnchor.constraint(equalTo: self.facebookLoginButton.bottomAnchor,
+                                                    constant: 8).isActive = true
+        self.googleLoginButton.widthAnchor.constraint(equalTo: self.loginRegisterButton.widthAnchor).isActive = true
+        self.googleLoginButton.heightAnchor.constraint(equalTo: self.loginRegisterButton.heightAnchor).isActive = true
+    }
+    
+    func setupTwitterLoginButton() {
+        self.twitterLoginButton.centerXAnchor.constraint(equalTo: self.loginRegisterButton.centerXAnchor).isActive = true
+        self.twitterLoginButton.topAnchor.constraint(equalTo: self.googleLoginButton.bottomAnchor,
+                                                     constant: 8).isActive = true
+        self.twitterLoginButton.widthAnchor.constraint(equalTo: self.loginRegisterButton.widthAnchor).isActive = true
+        self.twitterLoginButton.heightAnchor.constraint(equalTo: self.loginRegisterButton.heightAnchor).isActive = true
+    }
+    
+    func setupLoginRegisterSegmentedControl() {
+        self.loginRegisterSegmentedControl.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        self.loginRegisterSegmentedControl.bottomAnchor.constraint(equalTo: self.inputsContainerView.topAnchor,
+                                                                   constant: -15).isActive = true
+        self.loginRegisterSegmentedControl.widthAnchor.constraint(equalTo: self.inputsContainerView.widthAnchor).isActive = true
+        self.loginRegisterSegmentedControl.heightAnchor.constraint(equalToConstant: 50).isActive = true
+    }
+    
+    func setupProfileImageView() {
+        self.profileImageView.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        self.profileImageView.bottomAnchor.constraint(equalTo: self.loginRegisterSegmentedControl.topAnchor,
+                                                      constant: -15).isActive = true
+        self.profileImageView.widthAnchor.constraint(equalToConstant: 150).isActive = true
+        self.profileImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+    }
+}
+
+// MARK: -
+// MARK: - Login
+
+fileprivate extension LoginController {
     func loginWithCredentials(credentials: AuthCredential, type: String) {
         Auth.auth().signIn(with: credentials) { [weak self] (user, error) in
+            guard let strongSelf = self else { return }
             if let loginError = error {
                 print("Failed to login to Firebase via \(type): \(loginError)")
                 return
@@ -165,7 +319,7 @@ class LoginController: UIViewController, FBSDKLoginButtonDelegate, GIDSignInUIDe
             reference.observe(.value, with: { (snapshot) in
                 let dict = snapshot.value as! NSDictionary
                 let keys = dict.allKeys as! [String]
-                let userKey = user?.uid
+                guard let userKey = user?.uid else { return }
                 var isRegisteredInDBBefore = false
                 for key in keys {
                     if userKey == key {
@@ -175,81 +329,96 @@ class LoginController: UIViewController, FBSDKLoginButtonDelegate, GIDSignInUIDe
                 }
                 
                 if isRegisteredInDBBefore {
-                    self?.messagesController?.setupNavBarTitle()
-                    self?.dismiss(animated: true, completion: nil)
+                    strongSelf.messagesController?.setupNavBarTitle()
+                    strongSelf.dismiss(animated: true, completion: nil)
                 } else {
-                    var values = [String: AnyObject]()
                     switch type {
                     case "Facebook":
-                        let imageURL = FBSDKProfile.current().imageURL(for: .square,
-                                                                       size: CGSize(width: 100, height: 100))
-                        let userName = FBSDKProfile.current().name
-                        let userLink = FBSDKProfile.current().linkURL
-                        let image = String(describing: imageURL!)
-                        let name = userName!
-                        let link = String(describing: userLink!)
-                        values = [
-                            "name" : name as AnyObject,
-                            "email" : link as AnyObject,
-                            "profileImageURL" : image as AnyObject
-                        ]
-                        
-                        self?.registerUserIntoDatabase(uid: userKey!, values: values)
-                        
+                        strongSelf.facebookLogin(userKey: userKey)
                     case "Google":
-                        let imageURL = GIDSignIn.sharedInstance().currentUser.profile.imageURL(withDimension: 100)
-                        let userLink = GIDSignIn.sharedInstance().currentUser.profile.email
-                        let name = GIDSignIn.sharedInstance().currentUser.profile.name
-                        let image = String(describing: imageURL!)
-                        values = [
-                            "name": name! as AnyObject,
-                            "email": userLink! as AnyObject,
-                            "profileImageURL": image as AnyObject
-                        ]
-                        
-                        self?.registerUserIntoDatabase(uid: userKey!, values: values)
-                        
+                        strongSelf.googleLogin(userKey: userKey)
                     case "Twitter":
-                        let client = TWTRAPIClient.withCurrentUser()
-                        guard let userID = client.userID else { return }
-                      
-                        client.loadUser(withID: userID, completion: { (user, error) in
-                            if let err = error {
-                                print(err)
-                            }
-                            
-                            let name = user?.name
-                            let imageURL = user?.profileImageURL
-                            let userLink = user?.profileURL
-                            let stringLink = String(describing: userLink!)
-                            print("name: \(name), imageURL: \(imageURL), userLink: \(stringLink)")
-                            values = [
-                                "name": name! as AnyObject,
-                                "email": stringLink as AnyObject,
-                                "profileImageURL": imageURL! as AnyObject
-                            ]
-                            
-                            self?.registerUserIntoDatabase(uid: userKey!, values: values)
-                        })
+                        strongSelf.twitterLogin(userKey: userKey)
                     default:
                         break
                     }
-                   
-                    
-                    
                 }
                 
             }, withCancel: nil)
         }
     }
     
+    func facebookLogin(userKey: String) {
+        var values = [String: AnyObject]()
+        let imageURL = FBSDKProfile.current().imageURL(for: .square,
+                                                       size: CGSize(width: 100, height: 100))
+        let userName = FBSDKProfile.current().name
+        let userLink = FBSDKProfile.current().linkURL
+        let image = String(describing: imageURL!)
+        let name = userName!
+        let link = String(describing: userLink!)
+        values = [
+            "name" : name as AnyObject,
+            "email" : link as AnyObject,
+            "profileImageURL" : image as AnyObject
+        ]
+        
+        self.registerUserIntoDatabase(uid: userKey, values: values)
+    }
+    
+    func googleLogin(userKey: String) {
+        var values = [String: AnyObject]()
+        let imageURL = GIDSignIn.sharedInstance().currentUser.profile.imageURL(withDimension: 100)
+        let userLink = GIDSignIn.sharedInstance().currentUser.profile.email
+        let name = GIDSignIn.sharedInstance().currentUser.profile.name
+        let image = String(describing: imageURL!)
+        values = [
+            "name": name! as AnyObject,
+            "email": userLink! as AnyObject,
+            "profileImageURL": image as AnyObject
+        ]
+        
+        self.registerUserIntoDatabase(uid: userKey, values: values)
+    }
+    
+    func twitterLogin(userKey: String) {
+        var values = [String: AnyObject]()
+        let client = TWTRAPIClient.withCurrentUser()
+        guard let userID = client.userID else { return }
+        
+        client.loadUser(withID: userID, completion: { [weak self] (user, error) in
+            guard let strongSelf = self else { return }
+            if let err = error {
+                print(err)
+            }
+            
+            let name = user?.name
+            let imageURL = user?.profileImageURL
+            let userLink = user?.profileURL
+            let stringLink = String(describing: userLink!)
+            
+            values = [
+                "name": name! as AnyObject,
+                "email": stringLink as AnyObject,
+                "profileImageURL": imageURL! as AnyObject
+            ]
+            
+            strongSelf.registerUserIntoDatabase(uid: userKey, values: values)
+        })
+    }
+}
+
+// MARK: -
+// MARK: - FBSDKDelegate
+
+extension LoginController: FBSDKLoginButtonDelegate {
     func loginButton(_ loginButton: FBSDKLoginButton!, didCompleteWith result: FBSDKLoginManagerLoginResult!, error: Error!) {
         if let errorMessage = error {
             print(errorMessage)
             return
         }
         
-        FBSDKGraphRequest(graphPath: "/me", parameters: ["fields" : "id, name, picture.type(large), link, email"]).start { [weak self] (connection, result, err) in
+        FBSDKGraphRequest(graphPath: "/me", parameters: ["fields" : "id, name, picture.type(large), link, email"]).start { (connection, result, err) in
             if let error = err {
                 print("Failed to start graph request: \(error)")
                 return
@@ -271,15 +440,18 @@ class LoginController: UIViewController, FBSDKLoginButtonDelegate, GIDSignInUIDe
         }
         
         let credentials = FacebookAuthProvider.credential(withAccessToken: accessTokenString)
-        
         loginWithCredentials(credentials: credentials, type: "Facebook")
-        
     }
     
     func loginButtonDidLogOut(_ loginButton: FBSDKLoginButton!) {
         print("logout")
     }
-    
+}
+
+// MARK: -
+// MARK: - GoogleAuthDelegate
+
+extension LoginController: GIDSignInDelegate, GIDSignInUIDelegate {
     func sign(_ signIn: GIDSignIn!, didSignInFor user: GIDGoogleUser!, withError error: Error!) {
         if let err = error {
             print(err.localizedDescription)
@@ -292,125 +464,5 @@ class LoginController: UIViewController, FBSDKLoginButtonDelegate, GIDSignInUIDe
         let credentials = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: accessToken)
         
         loginWithCredentials(credentials: credentials, type: "Google")
-    }
-    
-    func setupLoginRegisterSegmentedControl() {
-        loginRegisterSegmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        loginRegisterSegmentedControl.bottomAnchor.constraint(equalTo: inputsContainerView.topAnchor, constant: -15).isActive = true
-        loginRegisterSegmentedControl.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor).isActive = true
-        loginRegisterSegmentedControl.heightAnchor.constraint(equalToConstant: 50).isActive = true
-    }
-    
-    func setupProfileImageView() {
-        profileImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        profileImageView.bottomAnchor.constraint(equalTo: loginRegisterSegmentedControl.topAnchor, constant: -15).isActive = true
-        profileImageView.widthAnchor.constraint(equalToConstant: 150).isActive = true
-        profileImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
-    }
-    
-    var inputsContainerViewHeightAnchor: NSLayoutConstraint?
-    var nameTextFieldHeightAnchor: NSLayoutConstraint?
-    var emailTextFieldHeightAnchor: NSLayoutConstraint?
-    var passwordTextFieldHeightAnchor: NSLayoutConstraint?
-    
-    func setupInputsContainerView() {
-        inputsContainerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        inputsContainerView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
-        inputsContainerView.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -25).isActive = true
-        inputsContainerViewHeightAnchor = inputsContainerView.heightAnchor.constraint(equalToConstant: 150)
-        inputsContainerViewHeightAnchor?.isActive = true
-        
-        inputsContainerView.addSubview(nameTextField)
-        inputsContainerView.addSubview(nameSeparatorView)
-        inputsContainerView.addSubview(emailTextField)
-        inputsContainerView.addSubview(emailSeparatorView)
-        inputsContainerView.addSubview(passwordTextField)
-        
-        setupNameTextField()
-        setupNameSeparatorView()
-        setupEmailTextField()
-        setupEmailSeparatorView()
-        setupPasswordTextField()
-    }
-    
-    func setupLoginRegisterButton() {
-        loginRegisterButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        loginRegisterButton.centerYAnchor.constraint(equalTo: inputsContainerView.bottomAnchor, constant: 30).isActive = true
-        loginRegisterButton.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor).isActive = true
-        loginRegisterButton.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: 1 / 3).isActive = true
-    }
-    
-    func setupNameTextField() {
-        nameTextField.leftAnchor.constraint(equalTo: inputsContainerView.leftAnchor, constant: 15).isActive = true
-        nameTextField.topAnchor.constraint(equalTo: inputsContainerView.topAnchor).isActive = true
-        nameTextField.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor, multiplier: 1).isActive = true
-        nameTextFieldHeightAnchor = nameTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: 1 / 3)
-            nameTextFieldHeightAnchor?.isActive = true
-    }
-    
-    func setupNameSeparatorView() {
-        nameSeparatorView.leftAnchor.constraint(equalTo: inputsContainerView.leftAnchor).isActive = true
-        nameSeparatorView.topAnchor.constraint(equalTo: nameTextField.bottomAnchor).isActive = true
-        nameSeparatorView.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor, multiplier: 1).isActive = true
-        nameSeparatorView.heightAnchor.constraint(equalToConstant: 1).isActive = true
-    }
-    
-    func setupEmailTextField() {
-        emailTextField.leftAnchor.constraint(equalTo: inputsContainerView.leftAnchor, constant: 15).isActive = true
-        emailTextField.topAnchor.constraint(equalTo: nameTextField.bottomAnchor).isActive = true
-        emailTextField.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor, multiplier: 1).isActive = true
-        emailTextFieldHeightAnchor = emailTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: 1 / 3)
-            emailTextFieldHeightAnchor?.isActive = true
-    }
-    
-    func setupEmailSeparatorView() {
-        emailSeparatorView.leftAnchor.constraint(equalTo: inputsContainerView.leftAnchor).isActive = true
-        emailSeparatorView.topAnchor.constraint(equalTo: emailTextField.bottomAnchor).isActive = true
-        emailSeparatorView.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor, multiplier: 1).isActive = true
-        emailSeparatorView.heightAnchor.constraint(equalToConstant: 1).isActive = true
-    }
-    
-    func setupPasswordTextField() {
-        passwordTextField.leftAnchor.constraint(equalTo: inputsContainerView.leftAnchor, constant: 15).isActive = true
-        passwordTextField.topAnchor.constraint(equalTo: emailTextField.bottomAnchor).isActive = true
-        passwordTextField.widthAnchor.constraint(equalTo: inputsContainerView.widthAnchor, multiplier: 1).isActive = true
-        passwordTextFieldHeightAnchor = passwordTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: 1 / 3)
-            passwordTextFieldHeightAnchor?.isActive = true
-    }
-    
-    func setupFacebookLoginButton() {
-        facebookLoginButton.centerXAnchor.constraint(equalTo: loginRegisterButton.centerXAnchor).isActive = true
-        facebookLoginButton.topAnchor.constraint(equalTo: loginRegisterButton.bottomAnchor, constant: 8).isActive = true
-        facebookLoginButton.widthAnchor.constraint(equalTo: loginRegisterButton.widthAnchor).isActive = true
-        facebookLoginButton.heightAnchor.constraint(equalTo: loginRegisterButton.heightAnchor).isActive = true
-    }
-    
-    func setupGoogleLoginButton() {
-        googleLoginButton.centerXAnchor.constraint(equalTo: loginRegisterButton.centerXAnchor).isActive = true
-        googleLoginButton.topAnchor.constraint(equalTo: facebookLoginButton.bottomAnchor, constant: 8).isActive = true
-        googleLoginButton.widthAnchor.constraint(equalTo: loginRegisterButton.widthAnchor).isActive = true
-        googleLoginButton.heightAnchor.constraint(equalTo: loginRegisterButton.heightAnchor).isActive = true
-    }
-    
-    func setupTwitterLoginButton() {
-        twitterLoginButton.centerXAnchor.constraint(equalTo: loginRegisterButton.centerXAnchor).isActive = true
-        twitterLoginButton.topAnchor.constraint(equalTo: googleLoginButton.bottomAnchor, constant: 8).isActive = true
-        twitterLoginButton.widthAnchor.constraint(equalTo: loginRegisterButton.widthAnchor).isActive = true
-        twitterLoginButton.heightAnchor.constraint(equalTo: loginRegisterButton.heightAnchor).isActive = true
-    }
-    
-    override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-}
-
-extension UIColor {
-    convenience init(r: CGFloat, g: CGFloat, b: CGFloat) {
-        self.init(red: r / 255, green: g / 255, blue: b / 255, alpha: 1)
     }
 }

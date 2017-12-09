@@ -11,35 +11,15 @@ import Firebase
 
 class NewMessageController: UITableViewController {
 
-    let cellId = "cellId"
-    var users = Array<User>()
+    private let cellId = "cellId"
+    private var users = Array<User>()
+    var messagesController: MessagesController?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Cancel", style: .plain, target: self, action: #selector(handleCancel))
         tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
-        
-        fetchUser()
-    }
-    
-    func fetchUser() {
-        Database.database().reference().child("users").observe(.childAdded, with: { [weak self] (snapshot) in
-            if let dict = snapshot.value as? [String : AnyObject] {
-                let user = User(dictionary: dict)
-                user.id = snapshot.key
-                self?.users.append(user)
-                
-                DispatchQueue.main.async {
-                    self?.tableView.reloadData()
-                }
-                
-            }
-        }, withCancel: nil)
-    }
-    
-    @objc func handleCancel() {
-        dismiss(animated: true, completion: nil)
+        self.configure()
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -62,13 +42,49 @@ class NewMessageController: UITableViewController {
         return 72
     }
     
-    var messagesController: MessagesController?
-    
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        dismiss(animated: true) {
+        self.startConversation(indexPath: indexPath)
+    }
+}
+
+// MARK: -
+// MARK: - Configure
+
+fileprivate extension NewMessageController {
+    func configure() {
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Cancel", style: .plain, target: self, action: #selector(handleCancel))
+        self.fetchUser()
+    }
+    
+    func fetchUser() {
+        Database.database().reference().child("users").observe(.childAdded, with: { [weak self] (snapshot) in
+            guard let strongSelf = self else { return }
+            if let dict = snapshot.value as? [String : AnyObject] {
+                let user = User(dictionary: dict)
+                user.id = snapshot.key
+                strongSelf.users.append(user)
+                
+                DispatchQueue.main.async {
+                    strongSelf.tableView.reloadData()
+                }
+                
+            }
+            }, withCancel: nil)
+    }
+}
+
+// MARK: -
+// MARK: - Transitions
+
+fileprivate extension NewMessageController {
+    @objc func handleCancel() {
+        self.dismiss(animated: true, completion: nil)
+    }
+    
+    func startConversation(indexPath: IndexPath) {
+        self.dismiss(animated: true) {
             let user = self.users[indexPath.row]
             self.messagesController?.showConversationController(forUser: user)
         }
     }
-    
 }
