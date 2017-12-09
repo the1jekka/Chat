@@ -281,11 +281,14 @@ fileprivate extension ConversationController {
 
 extension ConversationController: UIImagePickerControllerDelegate {
     @objc func handleAttachImageTap() {
-        let imagePickerController = UIImagePickerController()
-        imagePickerController.allowsEditing = true
-        imagePickerController.delegate = self
-        imagePickerController.mediaTypes = [kUTTypeImage as String, kUTTypeMovie as String]
-        present(imagePickerController, animated: true, completion: nil)
+        DispatchQueue.main.async { [weak self] in
+            guard let strongSelf = self else { return }
+            let imagePickerController = UIImagePickerController()
+            imagePickerController.allowsEditing = true
+            imagePickerController.delegate = self
+            imagePickerController.mediaTypes = [kUTTypeImage as String, kUTTypeMovie as String]
+            strongSelf.present(imagePickerController, animated: true, completion: nil)
+        }
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {

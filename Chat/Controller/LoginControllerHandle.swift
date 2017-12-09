@@ -16,10 +16,13 @@ import FBSDKLoginKit
 extension LoginController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     @objc func handleSelectProfileImage() {
-        let picker = UIImagePickerController()
-        picker.delegate = self
-        picker.allowsEditing = true
-        present(picker, animated: true, completion: nil)
+        DispatchQueue.main.async { [weak self] in
+            guard let strongSelf = self else { return }
+            let picker = UIImagePickerController()
+            picker.delegate = self
+            picker.allowsEditing = true
+            strongSelf.present(picker, animated: true, completion: nil)
+        }
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
